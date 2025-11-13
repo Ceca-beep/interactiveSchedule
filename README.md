@@ -1,2 +1,3 @@
 # interactiveSchedule
-The code for the P3 midterm
+An app that helps first-year students navigate through campus and
+understand their schedule.​

@@ -1,0 +1,101 @@
+{
+  "students": [
+    {
+      "id": "6abd7997-be06-455b-a411-a2fe3c3b6b66",
+      "name": "Student"
+    }
+  ],
+  "locations": [
+    {
+      "id": "f8097a3b-e891-4d49-b87c-b9333ce775af",
+      "name": "Main Entrance",
+      "building": "A",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": "6ecc88bf-c886-4a3c-b85c-59408c4a0002",
+      "name": "Sports Hall A",
+      "building": "S",
+      "x": 250,
+      "y": 120
+    },
+    {
+      "id": "d017a287-3914-4e3a-8ed6-432d0105e53c",
+      "name": "Sports Hall B",
+      "building": "S",
+      "x": -150,
+      "y": 200
+    },
+    {
+      "id": "4e9102f2-c56a-4f50-afbf-927aa85b78c8",
+      "name": "CS Building, Room 101",
+      "building": "C",
+      "x": 80,
+      "y": -60
+    },
+    {
+      "id": "ec414c8c-741f-4fdb-beab-4377e85f3b65",
+      "name": "Math Building, Room 12",
+      "building": "M",
+      "x": -200,
+      "y": -100
+    }
+  ],
+  "entries": [
+    {
+      "id": "7d046b8d-4aad-42ce-a5e8-f2b38fa1b748",
+      "courseName": "Basketball",
+      "type": "SPORT",
+      "day": "MONDAY",
+      "startTime": "08:00",
+      "durationMinutes": 90,
+      "locationId": "6ecc88bf-c886-4a3c-b85c-59408c4a0002"
+    },
+    {
+      "id": "dcae4ea6-887e-4152-902f-efc0a16fc26c",
+      "courseName": "Yoga",
+      "type": "SPORT",
+      "day": "MONDAY",
+      "startTime": "10:00",
+      "durationMinutes": 60,
+      "locationId": "d017a287-3914-4e3a-8ed6-432d0105e53c"
+    },
+    {
+      "id": "1e39c131-76b0-4fee-900a-5e6e63bcde27",
+      "courseName": "Swimming",
+      "type": "SPORT",
+      "day": "WEDNESDAY",
+      "startTime": "16:00",
+      "durationMinutes": 60,
+      "locationId": "6ecc88bf-c886-4a3c-b85c-59408c4a0002"
+    },
+    {
+      "id": "b5cf6c9a-92ce-4dea-afdc-a17c796d7a61",
+      "courseName": "Data Structures Lecture",
+      "type": "LECTURE",
+      "day": "TUESDAY",
+      "startTime": "09:00",
+      "durationMinutes": 120,
+      "locationId": "4e9102f2-c56a-4f50-afbf-927aa85b78c8"
+    },
+    {
+      "id": "0de88f1d-9563-440e-a7fa-d4fcb7e5eaf6",
+      "courseName": "Algorithms Lab",
+      "type": "LAB",
+      "day": "THURSDAY",
+      "startTime": "14:00",
+      "durationMinutes": 120,
+      "locationId": "4e9102f2-c56a-4f50-afbf-927aa85b78c8"
+    },
+    {
+      "id": "3c82911c-4908-4599-8b04-187b3b5523ad",
+      "courseName": "Linear Algebra Lecture",
+      "type": "LECTURE",
+      "day": "FRIDAY",
+      "startTime": "12:00",
+      "durationMinutes": 90,
+      "locationId": "ec414c8c-741f-4fdb-beab-4377e85f3b65"
+    }
+  ]
+}

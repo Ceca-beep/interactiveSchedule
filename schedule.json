@@ -1,0 +1,293 @@
+{
+  "students": [
+    {
+      "id": "6c8e2553-768c-44ad-b687-d7c065c4cf79",
+      "name": "Student"
+    }
+  ],
+  "locations": [
+    {
+      "id": "573a9fc4-cdda-48f6-a93d-d8489d3ae97c",
+      "name": "Main Entrance",
+      "building": "A",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": "c4ea2484-a31e-488d-a204-d9aad61782c2",
+      "name": "North Gate",
+      "building": "A",
+      "x": 50,
+      "y": 1100
+    },
+    {
+      "id": "dc27369a-4c20-448e-a875-c9ac20a6ec7b",
+      "name": "South Gate",
+      "building": "A",
+      "x": -40,
+      "y": -1000
+    },
+    {
+      "id": "40c7a383-c257-44e6-ac46-d5c8e9173141",
+      "name": "East Gate",
+      "building": "A",
+      "x": 1200,
+      "y": 120
+    },
+    {
+      "id": "451e0ce8-6bea-4a4f-8556-21f724a8a8aa",
+      "name": "West Gate",
+      "building": "A",
+      "x": -1200,
+      "y": -150
+    },
+    {
+      "id": "137717b8-3612-4d98-a145-2fc2c5977aa2",
+      "name": "Central Library",
+      "building": "L",
+      "x": 380,
+      "y": 90
+    },
+    {
+      "id": "6df20be7-ec32-4f58-8ccc-53d7ec943a25",
+      "name": "Student Canteen",
+      "building": "F",
+      "x": 220,
+      "y": -180
+    },
+    {
+      "id": "6325f537-84e0-4c63-a2fa-306010f01030",
+      "name": "CS Building, Room 101",
+      "building": "C",
+      "x": 180,
+      "y": -60
+    },
+    {
+      "id": "b6647117-fc9d-4298-821c-6ffe64c1342b",
+      "name": "CS Building, Room 305",
+      "building": "C",
+      "x": 210,
+      "y": -40
+    },
+    {
+      "id": "f6f64f1d-2d17-47d4-9841-71d7fcd89121",
+      "name": "CS Building, Lab 1",
+      "building": "C",
+      "x": 200,
+      "y": -20
+    },
+    {
+      "id": "934d708b-87f2-4549-9fac-3b3381144f63",
+      "name": "Math Building, Room 12",
+      "building": "M",
+      "x": -420,
+      "y": -90
+    },
+    {
+      "id": "7360709e-c192-4f8a-8b34-911fc93b272f",
+      "name": "Math Auditorium",
+      "building": "M",
+      "x": -460,
+      "y": -60
+    },
+    {
+      "id": "57762599-12d8-42ce-97b3-5556ecd10d27",
+      "name": "Physics Building, Room 201",
+      "building": "P",
+      "x": -300,
+      "y": 300
+    },
+    {
+      "id": "10c7a7b9-e55d-4a86-a1ad-eb31c9965be7",
+      "name": "Humanities Building, Hall H1",
+      "building": "H",
+      "x": 100,
+      "y": 520
+    },
+    {
+      "id": "b55592bc-0715-4a39-a8a2-1d8c8c720297",
+      "name": "University Admin",
+      "building": "U",
+      "x": 40,
+      "y": 240
+    },
+    {
+      "id": "7a4f8d2f-2163-45fa-9565-fcba3f81f36f",
+      "name": "Dorm A",
+      "building": "D",
+      "x": -800,
+      "y": 650
+    },
+    {
+      "id": "b10401b6-3ac8-4adf-b9e7-a747d7fc3229",
+      "name": "Dorm B",
+      "building": "D",
+      "x": 760,
+      "y": -620
+    }
+  ],
+  "entries": [
+    {
+      "id": "f19e595c-ca3c-4181-8136-47db9ba382e6",
+      "courseName": "Programming Fundamentals",
+      "type": "LECTURE",
+      "day": "MONDAY",
+      "startTime": "08:00",
+      "durationMinutes": 120,
+      "locationId": "6325f537-84e0-4c63-a2fa-306010f01030"
+    },
+    {
+      "id": "08a354ce-a03f-47d3-b3a9-b5a39e8e5b6d",
+      "courseName": "Programming Fundamentals",
+      "type": "LAB",
+      "day": "MONDAY",
+      "startTime": "12:00",
+      "durationMinutes": 120,
+      "locationId": "f6f64f1d-2d17-47d4-9841-71d7fcd89121"
+    },
+    {
+      "id": "56b76d5a-1d78-4e1d-b2e8-1468960ce9d2",
+      "courseName": "Linear Algebra",
+      "type": "LECTURE",
+      "day": "MONDAY",
+      "startTime": "10:00",
+      "durationMinutes": 90,
+      "locationId": "7360709e-c192-4f8a-8b34-911fc93b272f"
+    },
+    {
+      "id": "69ca5ec2-6b70-415f-9b96-42ec8663783c",
+      "courseName": "Campus Orientation",
+      "type": "SEMINAR",
+      "day": "MONDAY",
+      "startTime": "16:00",
+      "durationMinutes": 90,
+      "locationId": "b55592bc-0715-4a39-a8a2-1d8c8c720297"
+    },
+    {
+      "id": "e795a0ef-03c0-43f2-9d32-ba176e477629",
+      "courseName": "Data Structures",
+      "type": "LECTURE",
+      "day": "TUESDAY",
+      "startTime": "09:00",
+      "durationMinutes": 120,
+      "locationId": "b6647117-fc9d-4298-821c-6ffe64c1342b"
+    },
+    {
+      "id": "68f45ef9-7480-4afc-94e4-95de4a6d451f",
+      "courseName": "Data Structures",
+      "type": "LAB",
+      "day": "TUESDAY",
+      "startTime": "13:00",
+      "durationMinutes": 120,
+      "locationId": "f6f64f1d-2d17-47d4-9841-71d7fcd89121"
+    },
+    {
+      "id": "56383831-42fc-4941-8d3e-92d8ba508e33",
+      "courseName": "Academic Writing",
+      "type": "SEMINAR",
+      "day": "TUESDAY",
+      "startTime": "15:00",
+      "durationMinutes": 90,
+      "locationId": "10c7a7b9-e55d-4a86-a1ad-eb31c9965be7"
+    },
+    {
+      "id": "e870d8bf-f0a8-4153-8672-aabdea6dac0a",
+      "courseName": "Operating Systems",
+      "type": "LECTURE",
+      "day": "WEDNESDAY",
+      "startTime": "08:30",
+      "durationMinutes": 120,
+      "locationId": "6325f537-84e0-4c63-a2fa-306010f01030"
+    },
+    {
+      "id": "a3fd7278-6faa-437a-aed6-8b3736e15042",
+      "courseName": "Operating Systems",
+      "type": "LAB",
+      "day": "WEDNESDAY",
+      "startTime": "12:30",
+      "durationMinutes": 120,
+      "locationId": "f6f64f1d-2d17-47d4-9841-71d7fcd89121"
+    },
+    {
+      "id": "c1f9fb1c-acb0-47ed-9061-87f5dc749683",
+      "courseName": "Discrete Math",
+      "type": "LECTURE",
+      "day": "WEDNESDAY",
+      "startTime": "10:30",
+      "durationMinutes": 90,
+      "locationId": "934d708b-87f2-4549-9fac-3b3381144f63"
+    },
+    {
+      "id": "ab3e50f7-8662-4930-afc2-68902c5ed4cb",
+      "courseName": "Physics Seminar",
+      "type": "SEMINAR",
+      "day": "WEDNESDAY",
+      "startTime": "15:30",
+      "durationMinutes": 90,
+      "locationId": "57762599-12d8-42ce-97b3-5556ecd10d27"
+    },
+    {
+      "id": "e9a33fc8-19c9-477e-a835-6c58bdd8de94",
+      "courseName": "Algorithms",
+      "type": "LECTURE",
+      "day": "THURSDAY",
+      "startTime": "09:00",
+      "durationMinutes": 120,
+      "locationId": "b6647117-fc9d-4298-821c-6ffe64c1342b"
+    },
+    {
+      "id": "73b9635d-51a3-45ac-a63d-9347eee9d392",
+      "courseName": "Algorithms",
+      "type": "LAB",
+      "day": "THURSDAY",
+      "startTime": "13:00",
+      "durationMinutes": 120,
+      "locationId": "f6f64f1d-2d17-47d4-9841-71d7fcd89121"
+    },
+    {
+      "id": "03e2da71-09bf-42ef-b051-e5ef66a058ea",
+      "courseName": "Ethics in IT",
+      "type": "SEMINAR",
+      "day": "THURSDAY",
+      "startTime": "16:00",
+      "durationMinutes": 90,
+      "locationId": "10c7a7b9-e55d-4a86-a1ad-eb31c9965be7"
+    },
+    {
+      "id": "49d39f33-3aa9-41f8-bb52-920d8004ce96",
+      "courseName": "Databases",
+      "type": "LECTURE",
+      "day": "FRIDAY",
+      "startTime": "08:00",
+      "durationMinutes": 120,
+      "locationId": "6325f537-84e0-4c63-a2fa-306010f01030"
+    },
+    {
+      "id": "2852d1f9-bd99-4151-a52f-e6edff9c73b1",
+      "courseName": "Databases",
+      "type": "LAB",
+      "day": "FRIDAY",
+      "startTime": "12:00",
+      "durationMinutes": 120,
+      "locationId": "f6f64f1d-2d17-47d4-9841-71d7fcd89121"
+    },
+    {
+      "id": "f387b69e-4166-4e94-a6b3-4cfc4da00b96",
+      "courseName": "Probability",
+      "type": "LECTURE",
+      "day": "FRIDAY",
+      "startTime": "10:00",
+      "durationMinutes": 90,
+      "locationId": "7360709e-c192-4f8a-8b34-911fc93b272f"
+    },
+    {
+      "id": "15c2c73e-afba-4790-b334-ef52979a42be",
+      "courseName": "Research Seminar",
+      "type": "SEMINAR",
+      "day": "FRIDAY",
+      "startTime": "15:00",
+      "durationMinutes": 90,
+      "locationId": "137717b8-3612-4d98-a145-2fc2c5977aa2"
+    }
+  ]
+}

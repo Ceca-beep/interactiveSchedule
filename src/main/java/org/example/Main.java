@@ -29,8 +29,6 @@ public class Main {
 
         try (Scanner scanner = new Scanner(System.in)) {
             try {
-                // Always use JDBC storage in DB mode. If you still want to use JSON/OBJ storage,
-                // don't delete JsonStorage.java/ObjectStreamStorage.java and change the default back.
                 Storage storage = switch (storageType) {
                     case "db"   -> new JdbcStorage();
                     default     -> throw new IllegalArgumentException("Only 'db' storage is supported in this build: " + storageType);
@@ -49,17 +47,6 @@ public class Main {
                         System.out.println("Created seed data at: " + dataSource);
                     } catch (Exception sx) {
                         System.err.println("Failed to save seed data: " + sx.getMessage());
-                    }
-                }
-
-                // If we're running in DB mode, remove legacy JSON files so they aren't accidentally used
-                if ("db".equalsIgnoreCase(storageType)) {
-                    try {
-                        Files.deleteIfExists(Path.of("schedule.json"));
-                        Files.deleteIfExists(Path.of("newschedule.json"));
-                        System.out.println("Removed legacy JSON files (if present).");
-                    } catch (Exception delEx) {
-                        System.err.println("Warning: couldn't remove legacy JSON files: " + delEx.getMessage());
                     }
                 }
 

@@ -12,16 +12,11 @@
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- JavaFX version to use; change if needed for your JDK -->
+        <javafx.version>21</javafx.version>
     </properties>
 
     <dependencies>
-        <!-- Gson for JSON handling -->
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.10.1</version>
-        </dependency>
-
         <!-- MySQL JDBC driver (official coordinates) -->
         <dependency>
             <groupId>mysql</groupId>
@@ -29,6 +24,18 @@
             <version>8.0.33</version>
             <scope>runtime</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>win</classifier> </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>win</classifier> </dependency>
+
 
     </dependencies>
 
@@ -44,7 +51,17 @@
                 </configuration>
             </plugin>
 
-            <!-- Plugin to build a self-contained JAR (includes Gson) -->
+            <!-- JavaFX maven plugin for running during development -->
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>org.example.MainApp</mainClass>
+                </configuration>
+            </plugin>
+
+            <!-- Plugin to build a self-contained JAR (includes necessary deps) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>

@@ -1,7 +1,5 @@
 package org.example;
 
-import java.nio.file.Path;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -19,9 +17,7 @@ public class Main {
                 : "jdbc:mysql://localhost:3306/university_schedule?user=root&password=root");
         String dayFilter   = kv.get("day");
         String typeFilter  = kv.get("type");
-        String classId     = kv.get("classId");
         String fromName    = kv.getOrDefault("from", "Main Entrance");
-        boolean benchmark  = Boolean.parseBoolean(kv.getOrDefault("benchmark", "false"));
 
         Validators.requireKnownStorage(storageType);
         Validators.requireNonEmptyDayIfPresent(dayFilter);
@@ -29,10 +25,13 @@ public class Main {
 
         try (Scanner scanner = new Scanner(System.in)) {
             try {
-                Storage storage = switch (storageType) {
-                    case "db"   -> new JdbcStorage();
-                    default     -> throw new IllegalArgumentException("Only 'db' storage is supported in this build: " + storageType);
-                };
+                // Always use JDBC storage in DB mode.
+                final Storage storage;
+                if ("db".equalsIgnoreCase(storageType)) {
+                    storage = new JdbcStorage();
+                } else {
+                    throw new IllegalArgumentException("Only 'db' storage is supported in this build: " + storageType);
+                }
 
                 DataSnapshot data;
                 try {
@@ -59,81 +58,60 @@ public class Main {
                     }
                 }
 
-                if (classId != null && !classId.isBlank()) {
-                    // Simulate "click": show details + route
-                    TimetableEntry entry = data.getEntries().stream()
-                            .filter(e -> e.getId().equals(classId))
-                            .findFirst()
-                            .orElseThrow(() -> new NoSuchElementException("Class not found: " + classId));
+                // Always show the list of matched classes and allow user to pick by the printed number
+                List<TimetableEntry> filtered = data.getEntries();
 
-                    Location from = data.findLocationByName(fromName)
-                            .orElseThrow(() -> new NoSuchElementException("Start location not found: " + fromName));
+                if (dayFilter != null && !dayFilter.isBlank()) {
+                    String df = dayFilter.trim().toUpperCase();
+                    filtered = filtered.stream()
+                            .filter(e -> e.getDay().equalsIgnoreCase(df))
+                            .collect(Collectors.toList());
+                }
+                if (typeFilter != null && !typeFilter.isBlank()) {
+                    String tf = typeFilter.trim().toUpperCase();
+                    filtered = filtered.stream()
+                            .filter(e -> e.getType().name().equalsIgnoreCase(tf))
+                            .collect(Collectors.toList());
+                }
 
-                    Location to = data.findLocationById(entry.getLocationId())
-                            .orElseThrow(() -> new NoSuchElementException("Class location not found: " + entry.getLocationId()));
-
-                    System.out.println("\n=== Class Details ===");
-                    printEntry(entry, data);
-
-                    Navigator nav = new SimpleNavigator();
-                    Route route = nav.route(from, to);
-                    printRoute(route, from, to);
+                if (filtered.isEmpty()) {
+                    System.out.println("No classes match your filters.");
                 } else {
-                    // List schedule with optional filters
-                    List<TimetableEntry> filtered = data.getEntries();
-
-                    if (dayFilter != null && !dayFilter.isBlank()) {
-                        String df = dayFilter.trim().toUpperCase();
-                        filtered = filtered.stream()
-                                .filter(e -> e.getDay().equalsIgnoreCase(df))
-                                .collect(Collectors.toList());
-                    }
-                    if (typeFilter != null && !typeFilter.isBlank()) {
-                        String tf = typeFilter.trim().toUpperCase();
-                        filtered = filtered.stream()
-                                .filter(e -> e.getType().name().equalsIgnoreCase(tf))
-                                .collect(Collectors.toList());
+                    System.out.println("\n=== Matched Classes ===");
+                    for (int i = 0; i < filtered.size(); i++) {
+                        System.out.printf("%d) ", i + 1);
+                        printEntry(filtered.get(i), data);
                     }
 
-                    if (filtered.isEmpty()) {
-                        System.out.println("No classes match your filters.");
-                    } else {
-                        System.out.println("\n=== Matched Classes ===");
-                        for (int i = 0; i < filtered.size(); i++) {
-                            System.out.printf("%d) ", i + 1);
-                            printEntry(filtered.get(i), data);
-                        }
+                    // Allow user to pick a class to view details and route
+                    System.out.print("\nEnter class number to view details and route (or press ENTER to skip): ");
+                    String pick = scanner.nextLine().trim();
+                    if (!pick.isEmpty()) {
+                        try {
+                            int idx = Integer.parseInt(pick) - 1;
+                            if (idx < 0 || idx >= filtered.size()) {
+                                System.out.println("Invalid selection.");
+                            } else {
+                                TimetableEntry entry = filtered.get(idx);
+                                System.out.println("\n=== Class Details ===");
+                                printEntry(entry, data);
 
-                        // Allow user to pick a class to view details and route
-                        System.out.print("\nEnter class number to view details and route (or press ENTER to skip): ");
-                        String pick = scanner.nextLine().trim();
-                        if (!pick.isEmpty()) {
-                            try {
-                                int idx = Integer.parseInt(pick) - 1;
-                                if (idx < 0 || idx >= filtered.size()) {
-                                    System.out.println("Invalid selection.");
-                                } else {
-                                    TimetableEntry entry = filtered.get(idx);
-                                    System.out.println("\n=== Class Details ===");
-                                    printEntry(entry, data);
+                                // Ask for start location (default to provided --from)
+                                System.out.print("Start location (press ENTER for '" + fromName + "'): ");
+                                String startInput = scanner.nextLine().trim();
+                                String startName = startInput.isEmpty() ? fromName : startInput;
 
-                                    // Ask for start location (default to provided --from)
-                                    System.out.print("Start location (press ENTER for '" + fromName + "'): ");
-                                    String startInput = scanner.nextLine().trim();
-                                    String startName = startInput.isEmpty() ? fromName : startInput;
+                                Location from = data.findLocationByName(startName)
+                                        .orElseThrow(() -> new NoSuchElementException("Start location not found: " + startName));
+                                Location to = data.findLocationById(entry.getLocationId())
+                                        .orElseThrow(() -> new NoSuchElementException("Class location not found: " + entry.getLocationId()));
 
-                                    Location from = data.findLocationByName(startName)
-                                            .orElseThrow(() -> new NoSuchElementException("Start location not found: " + startName));
-                                    Location to = data.findLocationById(entry.getLocationId())
-                                            .orElseThrow(() -> new NoSuchElementException("Class location not found: " + entry.getLocationId()));
-
-                                    Navigator nav = new SimpleNavigator();
-                                    Route route = nav.route(from, to);
-                                    printRoute(route, from, to);
-                                }
-                            } catch (NumberFormatException nfe) {
-                                System.out.println("Invalid number.");
+                                Navigator nav = new SimpleNavigator();
+                                Route route = nav.route(from, to);
+                                printRoute(route, from, to);
                             }
+                        } catch (NumberFormatException nfe) {
+                            System.out.println("Invalid number.");
                         }
                     }
                 }

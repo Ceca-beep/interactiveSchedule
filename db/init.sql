@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS students (
   name VARCHAR(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+ALTER TABLE `students` ADD COLUMN `faculty` VARCHAR(255);
+
 INSERT INTO locations (name, code, x, y) VALUES
   ('Main Entrance', 'A', 0, 0),
   ('CS Building, Room 101', 'C', 180, -60),

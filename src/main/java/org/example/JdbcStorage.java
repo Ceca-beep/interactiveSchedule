@@ -55,9 +55,10 @@ public class JdbcStorage implements Storage {
 
                 // Insert students
                 try (PreparedStatement ps = conn.prepareStatement(
-                        "INSERT INTO students (name) VALUES (?)")) {
+                        "INSERT INTO students (name, faculty) VALUES (?, ?)")) {
                     for (Student s : data.getStudents()) {
                         ps.setString(1, s.getName());
+                        ps.setString(2, s.getFaculty());
                         ps.executeUpdate();
                         ps.clearParameters();
                     }
@@ -138,13 +139,30 @@ public class JdbcStorage implements Storage {
             }
 
             // Load students
-            try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery("SELECT name FROM students")) {
-                while (rs.next()) d.getStudents().add(new Student(rs.getString("name")));
+            try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery("SELECT name, faculty FROM students")) {
+                while (rs.next()) d.getStudents().add(new Student(rs.getString("name"), rs.getString("faculty")));
             }
 
             // If DB is empty (no locations or no entries), return empty snapshot so Main can seed
             if (d.getLocations().isEmpty() || d.getEntries().isEmpty()) return DataSnapshot.seed();
             return d;
+        } catch (SQLException e) {
+            throw new IOException(e);
+        }
+    }
+
+    /**
+     * Check whether a student account with given name and faculty exists.
+     * Faculty can be null or empty to match on name only.
+     */
+    public boolean accountExists(String name, String faculty, String dataSource) throws IOException {
+        try (Connection conn = DriverManager.getConnection(dataSource)) {
+            String sql = "SELECT 1 FROM students WHERE name = ?" + (faculty == null || faculty.isBlank() ? " LIMIT 1" : " AND faculty = ? LIMIT 1");
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, name);
+                if (faculty != null && !faculty.isBlank()) ps.setString(2, faculty);
+                try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
+            }
         } catch (SQLException e) {
             throw new IOException(e);
         }

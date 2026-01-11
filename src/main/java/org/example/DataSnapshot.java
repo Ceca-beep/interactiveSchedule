@@ -57,7 +57,7 @@ public class DataSnapshot implements Serializable {
                 admin, dormA, dormB
         ));
 
-        d.students.add(new Student("Student"));
+        d.students.add(new Student("Student", "Computer Science"));
 
         // MONDAY
         d.entries.add(new TimetableEntry("Programming Fundamentals",

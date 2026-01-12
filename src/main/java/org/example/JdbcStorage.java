@@ -7,202 +7,184 @@ import java.util.Map;
 
 public class JdbcStorage implements Storage {
 
-    // 1. NEW METHOD: Automatically creates all required tables if they are missing
     private void initSchema(Connection conn) throws SQLException {
         try (Statement st = conn.createStatement()) {
-            // Create LOCATIONS table
-            st.execute("""
-                CREATE TABLE IF NOT EXISTS locations (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(255),
-                    code VARCHAR(255),
-                    x INT,
-                    y INT
-                )
-            """);
+            // 1. Create Tables (SIMPLIFIED: We deleted the numerical IDs)
+            // Now we use the 'name' as the primary way to identify things.
 
-            // Create COURSES table
-            st.execute("""
-                CREATE TABLE IF NOT EXISTS courses (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(255) UNIQUE
-                )
-            """);
+            st.execute("CREATE TABLE IF NOT EXISTS locations (name VARCHAR(255) PRIMARY KEY, code VARCHAR(255), x INT, y INT)");
 
-            // Create STUDENTS table
-            st.execute("""
-                CREATE TABLE IF NOT EXISTS students (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(255),
-                    faculty VARCHAR(255)
-                )
-            """);
+            st.execute("CREATE TABLE IF NOT EXISTS courses (name VARCHAR(255) PRIMARY KEY, faculty VARCHAR(255))");
 
-            // Create TIMETABLE_ENTRIES table (Links to courses and locations)
+            st.execute("CREATE TABLE IF NOT EXISTS students (name VARCHAR(255) PRIMARY KEY, faculty VARCHAR(255))");
+
             st.execute("""
                 CREATE TABLE IF NOT EXISTS timetable_entries (
                     id INT AUTO_INCREMENT PRIMARY KEY,
-                    course_id INT,
+                    course_name VARCHAR(255),
                     type VARCHAR(50),
                     day VARCHAR(50),
                     start_time TIME,
                     duration_minutes INT,
-                    location_id INT,
-                    FOREIGN KEY (course_id) REFERENCES courses(id),
-                    FOREIGN KEY (location_id) REFERENCES locations(id)
+                    location_name VARCHAR(255),
+                    FOREIGN KEY (course_name) REFERENCES courses(name),
+                    FOREIGN KEY (location_name) REFERENCES locations(name)
                 )
             """);
+
+            // 2. Run the Auto-Seeder
+            seedDatabaseIfEmpty(conn);
+        }
+    }
+
+    private void seedDatabaseIfEmpty(Connection conn) throws SQLException {
+        try (Statement st = conn.createStatement()) {
+            // Check if data exists
+            try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM students")) {
+                if (rs.next() && rs.getInt(1) > 0) return;
+            }
+
+            System.out.println("Seeding database (Simple Version without IDs)...");
+
+            // --- A. INSERT LOCATIONS ---
+            st.execute("INSERT INTO locations (name, code, x, y) VALUES " +
+                    "('Main Entrance', 'A', 0, 0), " +
+                    "('CS Building, Room 101', 'C', 180, -60), " +
+                    "('CS Building, Room 305', 'C', 210, -40), " +
+                    "('CS Building, Lab 1', 'C', 200, -20), " +
+                    "('Math Building, Room 12', 'M', -420, -90), " +
+                    "('Math Auditorium', 'M', -460, -60), " +
+                    "('Psychology Hall, Room 101', 'Psy', -300, 300), " +
+                    "('Psychology Lab A', 'Psy', -320, 310), " +
+                    "('History Wing, Room 5', 'His', 100, 520), " +
+                    "('Archives Room', 'His', 120, 540), " +
+                    "('Humanities Building, Hall H1', 'H', 100, 500), " +
+                    "('Central Library', 'L', 380, 90), " +
+                    "('University Admin', 'U', 40, 240)");
+
+            // --- B. INSERT COURSES ---
+            st.execute("INSERT INTO courses (name, faculty) VALUES " +
+                    "('Programming Fundamentals', 'Computer Science'), " +
+                    "('Data Structures', 'Computer Science'), " +
+                    "('Operating Systems', 'Computer Science'), " +
+                    "('Algorithms', 'Computer Science'), " +
+                    "('Databases', 'Computer Science'), " +
+                    "('Intro to Psychology', 'Psychology'), " +
+                    "('Cognitive Science', 'Psychology'), " +
+                    "('Behavioral Analysis', 'Psychology'), " +
+                    "('Clinical Psychology', 'Psychology'), " +
+                    "('Social Psychology', 'Psychology'), " +
+                    "('World History I', 'History'), " +
+                    "('Ancient Civilizations', 'History'), " +
+                    "('Modern Europe', 'History'), " +
+                    "('History of Art', 'History'), " +
+                    "('Research Methods in History', 'History')");
+
+            // --- C. INSERT STUDENTS ---
+            st.execute("INSERT INTO students (name, faculty) VALUES " +
+                    "('Alex', 'Computer Science'), " +
+                    "('Sarah', 'Psychology'), " +
+                    "('Mike', 'History')");
+
+            // --- D. INSERT SCHEDULE (Look how clean this is now!) ---
+            // We use names directly. No more "SELECT id FROM..." subqueries.
+
+            // CS Schedule
+            st.execute("""
+                INSERT INTO timetable_entries (course_name, type, day, start_time, duration_minutes, location_name) VALUES
+                ('Programming Fundamentals', 'LECTURE', 'MONDAY', '08:00:00', 120, 'CS Building, Room 101'),
+                ('Programming Fundamentals', 'LAB', 'MONDAY', '12:00:00', 120, 'CS Building, Lab 1'),
+                ('Data Structures', 'LECTURE', 'TUESDAY', '09:00:00', 120, 'CS Building, Room 305'),
+                ('Data Structures', 'LAB', 'TUESDAY', '13:00:00', 120, 'CS Building, Lab 1'),
+                ('Operating Systems', 'LECTURE', 'WEDNESDAY', '08:30:00', 120, 'CS Building, Room 101'),
+                ('Operating Systems', 'LAB', 'WEDNESDAY', '12:30:00', 120, 'CS Building, Lab 1'),
+                ('Algorithms', 'LECTURE', 'THURSDAY', '10:00:00', 120, 'CS Building, Room 305'),
+                ('Algorithms', 'SEMINAR', 'THURSDAY', '14:00:00', 90, 'CS Building, Room 101'),
+                ('Databases', 'LECTURE', 'FRIDAY', '08:00:00', 120, 'CS Building, Room 101'),
+                ('Databases', 'LAB', 'FRIDAY', '12:00:00', 120, 'CS Building, Lab 1')
+            """);
+
+            // Psychology Schedule
+            st.execute("""
+                INSERT INTO timetable_entries (course_name, type, day, start_time, duration_minutes, location_name) VALUES
+                ('Intro to Psychology', 'LECTURE', 'MONDAY', '10:00:00', 90, 'Psychology Hall, Room 101'),
+                ('Intro to Psychology', 'SEMINAR', 'MONDAY', '14:00:00', 60, 'Psychology Lab A'),
+                ('Cognitive Science', 'LECTURE', 'TUESDAY', '11:00:00', 90, 'Psychology Hall, Room 101'),
+                ('Cognitive Science', 'LAB', 'TUESDAY', '15:00:00', 120, 'Psychology Lab A'),
+                ('Behavioral Analysis', 'LECTURE', 'WEDNESDAY', '09:00:00', 90, 'Psychology Hall, Room 101'),
+                ('Behavioral Analysis', 'SEMINAR', 'WEDNESDAY', '13:00:00', 60, 'Central Library'),
+                ('Clinical Psychology', 'LECTURE', 'THURSDAY', '10:00:00', 120, 'Psychology Hall, Room 101'),
+                ('Clinical Psychology', 'SEMINAR', 'THURSDAY', '14:00:00', 90, 'University Admin'),
+                ('Social Psychology', 'LECTURE', 'FRIDAY', '11:00:00', 90, 'Psychology Hall, Room 101'),
+                ('Social Psychology', 'SEMINAR', 'FRIDAY', '13:00:00', 60, 'Psychology Lab A')
+            """);
+
+            // History Schedule
+            st.execute("""
+                INSERT INTO timetable_entries (course_name, type, day, start_time, duration_minutes, location_name) VALUES
+                ('World History I', 'LECTURE', 'MONDAY', '09:00:00', 120, 'History Wing, Room 5'),
+                ('World History I', 'SEMINAR', 'MONDAY', '13:00:00', 60, 'Archives Room'),
+                ('Ancient Civilizations', 'LECTURE', 'TUESDAY', '10:00:00', 90, 'History Wing, Room 5'),
+                ('Ancient Civilizations', 'SEMINAR', 'TUESDAY', '14:00:00', 90, 'Humanities Building, Hall H1'),
+                ('Modern Europe', 'LECTURE', 'WEDNESDAY', '11:00:00', 90, 'History Wing, Room 5'),
+                ('Modern Europe', 'SEMINAR', 'WEDNESDAY', '15:00:00', 60, 'Archives Room'),
+                ('History of Art', 'LECTURE', 'THURSDAY', '09:00:00', 90, 'History Wing, Room 5'),
+                ('History of Art', 'SEMINAR', 'THURSDAY', '11:00:00', 60, 'Central Library'),
+                ('Research Methods in History', 'LECTURE', 'FRIDAY', '10:00:00', 90, 'History Wing, Room 5'),
+                ('Research Methods in History', 'SEMINAR', 'FRIDAY', '14:00:00', 90, 'Archives Room')
+            """);
+
+            System.out.println("Seeding complete!");
         }
     }
 
     @Override
     public void save(DataSnapshot data, String dataSource) throws IOException {
-        try (Connection conn = DriverManager.getConnection(dataSource)) {
-            conn.setAutoCommit(false);
-
-            // 2. CALL THE INIT METHOD HERE
-            // This guarantees tables exist before we try to delete/insert
-            initSchema(conn);
-
-            try (Statement st = conn.createStatement()) {
-                // Clear tables (respecting FK order - delete children first)
-                st.executeUpdate("DELETE FROM timetable_entries");
-                st.executeUpdate("DELETE FROM students");
-                st.executeUpdate("DELETE FROM courses"); // Delete courses after entries
-                st.executeUpdate("DELETE FROM locations"); // Delete locations after entries
-
-                // Insert locations and keep mapping from generated int id -> String id
-                Map<String, Integer> locIdMap = new HashMap<>();
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "INSERT INTO locations (name, code, x, y) VALUES (?, ?, ?, ?)",
-                        Statement.RETURN_GENERATED_KEYS)) {
-                    for (Location L : data.getLocations()) {
-                        ps.setString(1, L.getName());
-                        ps.setString(2, L.getBuilding());
-                        ps.setInt(3, L.getX());
-                        ps.setInt(4, L.getY());
-                        ps.executeUpdate();
-                        try (ResultSet gk = ps.getGeneratedKeys()) {
-                            if (gk.next()) {
-                                int gen = gk.getInt(1);
-                                locIdMap.put(L.getId(), gen);
-                            }
-                        }
-                    }
-                }
-
-                // Insert courses and map by name to id
-                Map<String, Integer> courseIdMap = new HashMap<>();
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "INSERT INTO courses (name) VALUES (?)", Statement.RETURN_GENERATED_KEYS)) {
-                    for (TimetableEntry e : data.getEntries()) {
-                        String course = e.getCourseName();
-                        if (courseIdMap.containsKey(course)) continue;
-                        ps.setString(1, course);
-                        ps.executeUpdate();
-                        try (ResultSet gk = ps.getGeneratedKeys()) {
-                            if (gk.next()) courseIdMap.put(course, gk.getInt(1));
-                        }
-                        ps.clearParameters();
-                    }
-                }
-
-                // Insert students
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "INSERT INTO students (name, faculty) VALUES (?, ?)")) {
-                    for (Student s : data.getStudents()) {
-                        ps.setString(1, s.getName());
-                        ps.setString(2, s.getFaculty());
-                        ps.executeUpdate();
-                        ps.clearParameters();
-                    }
-                }
-
-                // Insert timetable entries
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "INSERT INTO timetable_entries (course_id, type, day, start_time, duration_minutes, location_id) VALUES (?, ?, ?, ?, ?, ?)") ) {
-                    for (TimetableEntry e : data.getEntries()) {
-                        Integer cid = courseIdMap.get(e.getCourseName());
-                        Integer lid = locIdMap.get(e.getLocationId());
-                        // Skip if course or location wasn't found (prevents FK errors)
-                        if (cid == null || lid == null) continue;
-
-                        ps.setInt(1, cid);
-                        ps.setString(2, e.getType().name());
-                        ps.setString(3, e.getDay());
-                        // Add :00 because SQL Time expects HH:MM:SS
-                        ps.setTime(4, Time.valueOf(e.getStartTime() + ":00"));
-                        ps.setInt(5, e.getDurationMinutes());
-                        ps.setInt(6, lid);
-                        ps.executeUpdate();
-                        ps.clearParameters();
-                    }
-                }
-
-                conn.commit();
-            } catch (SQLException ex) {
-                conn.rollback();
-                throw ex;
-            }
-        } catch (SQLException e) {
-            throw new IOException(e);
-        }
+        // Not used
     }
 
     @Override
     public DataSnapshot load(String dataSource) throws IOException {
         try (Connection conn = DriverManager.getConnection(dataSource)) {
-            // Also init schema on load just in case save() was never called
             initSchema(conn);
 
             DataSnapshot d = new DataSnapshot();
 
-            // Load locations
-            Map<Integer, String> locIdToUuid = new HashMap<>();
-            try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery("SELECT id, name, code, x, y FROM locations")) {
+            // 1. Load Locations and Map Name -> UUID
+            Map<String, String> locNameToUuid = new HashMap<>();
+            try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery("SELECT name, code, x, y FROM locations")) {
                 while (rs.next()) {
-                    int id = rs.getInt("id");
-                    String name = rs.getString("name");
-                    String code = rs.getString("code");
-                    int x = rs.getInt("x");
-                    int y = rs.getInt("y");
-                    Location loc = new Location(name, code, x, y);
+                    Location loc = new Location(rs.getString("name"), rs.getString("code"), rs.getInt("x"), rs.getInt("y"));
                     d.getLocations().add(loc);
-                    locIdToUuid.put(id, loc.getId());
+                    // Map the Name to the Java Object's internal UUID
+                    locNameToUuid.put(rs.getString("name"), loc.getId());
                 }
             }
 
-            // Load courses into a map id->name
-            Map<Integer, String> courses = new HashMap<>();
-            try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery("SELECT id, name FROM courses")) {
-                while (rs.next()) courses.put(rs.getInt("id"), rs.getString("name"));
-            }
-
-            // Load timetable entries
-            try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery("SELECT course_id, type, day, start_time, duration_minutes, location_id FROM timetable_entries")) {
+            // 2. Load Timetable Entries (Using Names!)
+            try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery("SELECT course_name, type, day, start_time, duration_minutes, location_name FROM timetable_entries")) {
                 while (rs.next()) {
-                    int courseId = rs.getInt("course_id");
-                    String courseName = courses.getOrDefault(courseId, "Unknown");
-                    String type = rs.getString("type");
-                    String day = rs.getString("day");
-                    Time start = rs.getTime("start_time");
-                    int dur = rs.getInt("duration_minutes");
-                    int locId = rs.getInt("location_id");
+                    String courseName = rs.getString("course_name");
+                    String startStr = rs.getTime("start_time").toString().substring(0, 5); // HH:MM
 
-                    String startStr = String.format("%02d:%02d", start.toLocalTime().getHour(), start.toLocalTime().getMinute());
-                    String locUuid = locIdToUuid.get(locId);
-                    if (locUuid == null) continue;
-                    TimetableEntry e = new TimetableEntry(courseName, ClassType.valueOf(type), day, startStr, dur, locUuid);
-                    d.getEntries().add(e);
+                    // Find the UUID using the Location Name
+                    // Get the Location Name directly
+                    String locationName = rs.getString("location_name");
+
+// Optional: If you strictly need the valid UUID for other logic (like a map view),
+// keep the check, but pass the NAME to the entry constructor for display.
+                    if (!locNameToUuid.containsKey(locationName)) continue;
+
+                    d.getEntries().add(new TimetableEntry(
+                            courseName,
+                            ClassType.valueOf(rs.getString("type")),
+                            rs.getString("day"),
+                            startStr,
+                            rs.getInt("duration_minutes"),
+                            locationName // <--- FIXED: Now passes "History Wing..." instead of "c8e25..."
+                    ));
                 }
             }
-
-            // Load students
-            try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery("SELECT name, faculty FROM students")) {
-                while (rs.next()) d.getStudents().add(new Student(rs.getString("name"), rs.getString("faculty")));
-            }
-
-            if (d.getLocations().isEmpty() || d.getEntries().isEmpty()) return DataSnapshot.seed();
             return d;
         } catch (SQLException e) {
             throw new IOException(e);
@@ -211,13 +193,11 @@ public class JdbcStorage implements Storage {
 
     public boolean accountExists(String name, String faculty, String dataSource) throws IOException {
         try (Connection conn = DriverManager.getConnection(dataSource)) {
-            // Ensure table exists before checking
             initSchema(conn);
-
-            String sql = "SELECT 1 FROM students WHERE name = ?" + (faculty == null || faculty.isBlank() ? " LIMIT 1" : " AND faculty = ? LIMIT 1");
+            String sql = "SELECT 1 FROM students WHERE name = ? AND faculty = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, name);
-                if (faculty != null && !faculty.isBlank()) ps.setString(2, faculty);
+                ps.setString(2, faculty);
                 try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
             }
         } catch (SQLException e) {

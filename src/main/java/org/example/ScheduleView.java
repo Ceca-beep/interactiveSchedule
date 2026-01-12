@@ -3,10 +3,11 @@ package org.example;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.layout.*;
+import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -15,6 +16,7 @@ import javafx.scene.text.TextAlignment;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 public class ScheduleView extends ScrollPane {
 
@@ -86,20 +88,29 @@ public class ScheduleView extends ScrollPane {
             if (data == null) return;
 
             List<TimetableEntry> entries = data.getEntries();
+            List<Location> locations = data.getLocations();
 
             for (TimetableEntry entry : entries) {
                 // 1. Find the Column (Day)
                 int colIndex = getDayColumnIndex(entry.getDay());
-                if (colIndex == -1) continue; // Skip weekends if not in array
+                if (colIndex == -1) continue;
 
                 // 2. Find the Row (Time)
                 int rowIndex = getTimeRowIndex(entry.getStartTime());
-                if (rowIndex == -1) continue; // Skip odd times not in our slots
+                if (rowIndex == -1) continue;
 
-                // 3. Create the Rectangle (Button)
-                Button classBlock = createClassBlock(entry);
+                // 3. Find the matching Location Object
+                // We match the Entry's location string to the Location's NAME or ID
+                Optional<Location> matchingLoc = locations.stream()
+                        .filter(loc -> loc.getName().equals(entry.getLocationId()) || loc.getId().equals(entry.getLocationId()))
+                        .findFirst();
 
-                // 4. Add to Grid
+                Location loc = matchingLoc.orElse(null);
+
+                // 4. Create the Rectangle (Button)
+                Button classBlock = createClassBlock(entry, loc);
+
+                // 5. Add to Grid
                 grid.add(classBlock, colIndex, rowIndex);
             }
 
@@ -108,14 +119,19 @@ public class ScheduleView extends ScrollPane {
         }
     }
 
-    private Button createClassBlock(TimetableEntry entry) {
-        // Create a button that looks like a rectangle card
+    // --- HELPER METHODS BELOW ---
+
+    private Button createClassBlock(TimetableEntry entry, Location location) {
+        // Prepare the text (Use Location Name if found, otherwise keep the ID)
+        String locationDisplay = (location != null) ? location.getName() : entry.getLocationId();
+
         Button btn = new Button();
-        btn.setText(entry.getCourseName() + "\n(" + entry.getType() + ")\n" + entry.getLocationId()); // You might want to lookup location name later
+        btn.setText(entry.getCourseName() + "\n" + locationDisplay + "\n(" + entry.getType() + ")");
         btn.setTextAlignment(TextAlignment.CENTER);
         btn.setWrapText(true);
+        // Force the button to fill the grid cell
         btn.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-        btn.setMinHeight(80); // Make sure it's tall enough
+        btn.setMinHeight(80);
         btn.setMinWidth(120);
 
         // Different colors for Lecture vs Lab vs Seminar
@@ -128,10 +144,26 @@ public class ScheduleView extends ScrollPane {
 
         btn.setStyle(colorStyle + "-fx-background-radius: 10; -fx-cursor: hand;");
 
-        // Click Action (Placeholder for your Navigation Window)
+        // --- THE CLICK ACTION ---
         btn.setOnAction(e -> {
-            System.out.println("You clicked on: " + entry.getCourseName());
-            // TODO: Open your navigation window here later!
+            if (location != null) {
+                // 1. Get the directions string from the Location object
+                String directions = location.getDirectionsFromEntrance();
+
+                // 2. Show the Popup Window
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Navigation");
+                alert.setHeaderText("Directions to " + location.getName());
+                alert.setContentText(directions);
+                alert.showAndWait();
+            } else {
+                // Fallback if location isn't found
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Unknown Location");
+                alert.setHeaderText("Location Data Missing");
+                alert.setContentText("Sorry, we can't find the coordinates for: " + entry.getLocationId());
+                alert.showAndWait();
+            }
         });
 
         return btn;

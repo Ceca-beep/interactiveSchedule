@@ -5,9 +5,9 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class MainApp extends Application {
+
     @Override
     public void start(Stage primaryStage) {
-        // Determine data source (JDBC_URL env or default)
         String envUrl = System.getenv("JDBC_URL");
         String dataSource = envUrl != null && !envUrl.isBlank()
                 ? envUrl
@@ -15,20 +15,34 @@ public class MainApp extends Application {
 
         JdbcStorage storage = new JdbcStorage();
 
-        LoginPane login = new LoginPane(storage, dataSource, success -> {
+        // 1. Define the Login Logic wrapper so we can call it recursively
+        showLoginScreen(primaryStage, storage, dataSource);
+    }
+
+    private void showLoginScreen(Stage stage, JdbcStorage storage, String dataSource) {
+        // Now accepting (success, isAdmin, userFaculty)
+        LoginPane login = new LoginPane(storage, dataSource, (success, isAdmin, userFaculty) -> {
             if (success) {
-                ScheduleView sv = new ScheduleView(storage, dataSource);
-                Scene s = new Scene(sv, 1000, 700);
-                primaryStage.setTitle("Faculty Schedule");
-                primaryStage.setScene(s);
-                primaryStage.show();
+                // Pass 'userFaculty' to the ScheduleView constructor
+                ScheduleView sv = new ScheduleView(storage, dataSource, isAdmin, userFaculty, () -> {
+                    showLoginScreen(stage, storage, dataSource);
+                });
+
+                javafx.scene.Scene s = new javafx.scene.Scene(sv, 1000, 700);
+                String title = "Faculty Schedule";
+                if (isAdmin) title += " (ADMIN MODE)";
+                else title += " - " + userFaculty + " Department";
+
+                stage.setTitle(title);
+                stage.setScene(s);
+                stage.show();
             }
         });
 
-        Scene scene = new Scene(login, 400, 200);
-        primaryStage.setTitle("Login");
-        primaryStage.setScene(scene);
-        primaryStage.show();
+        javafx.scene.Scene scene = new javafx.scene.Scene(login, 400, 350);
+        stage.setTitle("Login");
+        stage.setScene(scene);
+        stage.show();
     }
 
     public static void main(String[] args) {

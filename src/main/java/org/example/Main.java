@@ -12,9 +12,8 @@ public class Main {
         String storageType = kv.getOrDefault("storage", "db").toLowerCase();
         // Prefer JDBC_URL env var if present, otherwise fall back to provided --data or a sensible local default
         String envUrl = System.getenv("JDBC_URL");
-        String dataSource  = kv.getOrDefault("data", envUrl != null && !envUrl.isBlank()
-                ? envUrl
-                : "jdbc:mysql://localhost:3306/university_schedule?user=root&password=root");
+        // We are forcing it to use this exact link no matter what!
+        String dataSource = "jdbc:mysql://localhost:3306/university_schedule?user=root&password=root";
         String dayFilter   = kv.get("day");
         String typeFilter  = kv.get("type");
         String fromName    = kv.getOrDefault("from", "Main Entrance");

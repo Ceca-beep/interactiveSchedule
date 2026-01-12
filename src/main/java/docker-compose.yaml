@@ -11,9 +11,6 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      # This connects your script to the database container
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      # This saves your data so it persists after restarts
       - db_data:/var/lib/mysql
 
 volumes:

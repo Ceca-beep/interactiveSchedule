@@ -6,16 +6,70 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class JdbcStorage implements Storage {
+
+    // 1. NEW METHOD: Automatically creates all required tables if they are missing
+    private void initSchema(Connection conn) throws SQLException {
+        try (Statement st = conn.createStatement()) {
+            // Create LOCATIONS table
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS locations (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(255),
+                    code VARCHAR(255),
+                    x INT,
+                    y INT
+                )
+            """);
+
+            // Create COURSES table
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS courses (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(255) UNIQUE
+                )
+            """);
+
+            // Create STUDENTS table
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS students (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(255),
+                    faculty VARCHAR(255)
+                )
+            """);
+
+            // Create TIMETABLE_ENTRIES table (Links to courses and locations)
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS timetable_entries (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    course_id INT,
+                    type VARCHAR(50),
+                    day VARCHAR(50),
+                    start_time TIME,
+                    duration_minutes INT,
+                    location_id INT,
+                    FOREIGN KEY (course_id) REFERENCES courses(id),
+                    FOREIGN KEY (location_id) REFERENCES locations(id)
+                )
+            """);
+        }
+    }
+
     @Override
     public void save(DataSnapshot data, String dataSource) throws IOException {
         try (Connection conn = DriverManager.getConnection(dataSource)) {
             conn.setAutoCommit(false);
+
+            // 2. CALL THE INIT METHOD HERE
+            // This guarantees tables exist before we try to delete/insert
+            initSchema(conn);
+
             try (Statement st = conn.createStatement()) {
-                // Clear tables (respecting FK order)
+                // Clear tables (respecting FK order - delete children first)
                 st.executeUpdate("DELETE FROM timetable_entries");
                 st.executeUpdate("DELETE FROM students");
-                st.executeUpdate("DELETE FROM courses");
-                st.executeUpdate("DELETE FROM locations");
+                st.executeUpdate("DELETE FROM courses"); // Delete courses after entries
+                st.executeUpdate("DELETE FROM locations"); // Delete locations after entries
 
                 // Insert locations and keep mapping from generated int id -> String id
                 Map<String, Integer> locIdMap = new HashMap<>();
@@ -70,10 +124,13 @@ public class JdbcStorage implements Storage {
                     for (TimetableEntry e : data.getEntries()) {
                         Integer cid = courseIdMap.get(e.getCourseName());
                         Integer lid = locIdMap.get(e.getLocationId());
-                        if (cid == null || lid == null) continue; // skip malformed
+                        // Skip if course or location wasn't found (prevents FK errors)
+                        if (cid == null || lid == null) continue;
+
                         ps.setInt(1, cid);
                         ps.setString(2, e.getType().name());
                         ps.setString(3, e.getDay());
+                        // Add :00 because SQL Time expects HH:MM:SS
                         ps.setTime(4, Time.valueOf(e.getStartTime() + ":00"));
                         ps.setInt(5, e.getDurationMinutes());
                         ps.setInt(6, lid);
@@ -95,6 +152,9 @@ public class JdbcStorage implements Storage {
     @Override
     public DataSnapshot load(String dataSource) throws IOException {
         try (Connection conn = DriverManager.getConnection(dataSource)) {
+            // Also init schema on load just in case save() was never called
+            initSchema(conn);
+
             DataSnapshot d = new DataSnapshot();
 
             // Load locations
@@ -106,7 +166,6 @@ public class JdbcStorage implements Storage {
                     String code = rs.getString("code");
                     int x = rs.getInt("x");
                     int y = rs.getInt("y");
-                    // Create Location with generated UUID to preserve DataSnapshot expectations
                     Location loc = new Location(name, code, x, y);
                     d.getLocations().add(loc);
                     locIdToUuid.put(id, loc.getId());
@@ -143,7 +202,6 @@ public class JdbcStorage implements Storage {
                 while (rs.next()) d.getStudents().add(new Student(rs.getString("name"), rs.getString("faculty")));
             }
 
-            // If DB is empty (no locations or no entries), return empty snapshot so Main can seed
             if (d.getLocations().isEmpty() || d.getEntries().isEmpty()) return DataSnapshot.seed();
             return d;
         } catch (SQLException e) {
@@ -151,12 +209,11 @@ public class JdbcStorage implements Storage {
         }
     }
 
-    /**
-     * Check whether a student account with given name and faculty exists.
-     * Faculty can be null or empty to match on name only.
-     */
     public boolean accountExists(String name, String faculty, String dataSource) throws IOException {
         try (Connection conn = DriverManager.getConnection(dataSource)) {
+            // Ensure table exists before checking
+            initSchema(conn);
+
             String sql = "SELECT 1 FROM students WHERE name = ?" + (faculty == null || faculty.isBlank() ? " LIMIT 1" : " AND faculty = ? LIMIT 1");
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, name);

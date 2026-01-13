@@ -90,46 +90,99 @@ public class ScheduleView extends ScrollPane {
         }
     }
 
+    // Inside ScheduleView.java
+
+    private int getDayColumn(String day) {
+        if (day == null) return -1;
+        for (int i = 0; i < DAYS.length; i++) {
+            if (DAYS[i].equalsIgnoreCase(day.trim())) {
+                return i + 1; // +1 because Col 0 is the Time Header
+            }
+        }
+        return -1;
+    }
+
+    private int getTimeRow(String timeStr) {
+        if (timeStr == null) return -1;
+
+        // Standardize the time string from the DB (e.g., "08:00:00" -> "08:00")
+        String cleanTime = timeStr.trim();
+        if (cleanTime.length() > 5) {
+            cleanTime = cleanTime.substring(0, 5);
+        }
+
+        for (int i = 0; i < TIME_SLOTS.length; i++) {
+            if (TIME_SLOTS[i].equals(cleanTime)) {
+                return i + 1; // +1 because Row 0 is the Day Header
+            }
+        }
+
+        // DEBUG: If a row isn't found, print why
+        System.out.println("DEBUG: Could not find row for time: [" + cleanTime + "]");
+        return -1;
+    }
+
+    private void fillRemainingEmptySlots(GridPane grid) {
+        for (int col = 1; col <= DAYS.length; col++) {
+            for (int row = 1; row <= TIME_SLOTS.length; row++) {
+                // Check if this specific cell is empty
+                if (getNodeFromGridPane(grid, col, row) == null) {
+                    grid.add(createEmptySlot(DAYS[col-1], TIME_SLOTS[row-1]), col, row);
+                }
+            }
+        }
+    }
+
+    // Helper to check if a cell is occupied
+    private javafx.scene.Node getNodeFromGridPane(GridPane gridPane, int col, int row) {
+        for (javafx.scene.Node node : gridPane.getChildren()) {
+            if (GridPane.getColumnIndex(node) == col && GridPane.getRowIndex(node) == row) {
+                return node;
+            }
+        }
+        return null;
+    }
+
+
     private void loadAndPlaceClasses(GridPane grid) {
-        try {
-            DataSnapshot data = storage.load(dataSource);
-            Map<String, String> courseFaculties = storage.getCourseFaculties(dataSource);
+        Thread loadThread = new Thread(() -> {
+            try {
+                // 1. Fetch data in background (Requirement 3)
+                DataSnapshot data = storage.loadByFaculty(userFaculty, dataSource);
 
-            if (data == null) return;
-            List<TimetableEntry> entries = data.getEntries();
-            List<Location> locations = data.getLocations();
+                javafx.application.Platform.runLater(() -> {
+                    // 2. CLEAR ONLY DATA (Keep the Time/Day headers)
+                    grid.getChildren().removeIf(node -> {
+                        Integer row = GridPane.getRowIndex(node);
+                        Integer col = GridPane.getColumnIndex(node);
+                        return row != null && col != null && row > 0 && col > 0;
+                    });
 
-            for (int col = 0; col < DAYS.length; col++) {
-                for (int row = 0; row < TIME_SLOTS.length; row++) {
+                    // 3. Place the courses
+                    for (TimetableEntry entry : data.getEntries()) {
+                        // Use trim() and toUpperCase() to ensure exact matching
+                        int col = getDayColumn(entry.getDay().trim().toUpperCase());
+                        int row = getTimeRow(entry.getStartTime().trim());
 
-                    String currentDay = DAYS[col];
-                    String currentTime = TIME_SLOTS[row];
-
-                    TimetableEntry foundEntry = findEntryForSlot(entries, currentDay, currentTime);
-
-                    if (foundEntry != null) {
-                        String courseFaculty = courseFaculties.getOrDefault(foundEntry.getCourseName(), "General");
-
-                        boolean isVisible = isAdmin
-                                || (userFaculty != null && userFaculty.equalsIgnoreCase(courseFaculty))
-                                || "General".equalsIgnoreCase(courseFaculty);
-
-                        if (!isVisible) {
-                            foundEntry = null;
+                        if (col != -1 && row != -1) {
+                            Location loc = findLocation(data.getLocations(), entry.getLocationId());
+                            grid.add(createClassBlock(entry, loc), col, row);
+                        } else {
+                            // This will tell you exactly which course is failing and why
+                            System.out.println("MISSING FROM UI: " + entry.getCourseName() +
+                                    " at " + entry.getDay() + " " + entry.getStartTime());
                         }
                     }
 
-                    if (foundEntry != null) {
-                        Location loc = findLocation(locations, foundEntry.getLocationId());
-                        grid.add(createClassBlock(foundEntry, loc), col + 1, row + 1);
-                    } else {
-                        grid.add(createEmptySlot(currentDay, currentTime), col + 1, row + 1);
-                    }
-                }
+                    // 4. Fill empty slots so they remain clickable
+                    fillRemainingEmptySlots(grid);
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            grid.add(new Label("Error: " + e.getMessage()), 1, 1);
-        }
+        });
+        loadThread.setDaemon(true);
+        loadThread.start();
     }
 
     private TimetableEntry findEntryForSlot(List<TimetableEntry> entries, String day, String timeStr) {
@@ -191,8 +244,12 @@ public class ScheduleView extends ScrollPane {
         // --- NEW FACULTY SELECTION ---
         ComboBox<String> facultyBox = new ComboBox<>();
         facultyBox.getItems().addAll("Computer Science", "History", "Math", "Engineering", "General");
-        // If the admin is logged in with a faculty, default to that
-        facultyBox.setValue(userFaculty != null ? userFaculty : "General");
+        facultyBox.setValue(userFaculty);
+
+        // If they are a specific faculty admin, don't let them add courses to other faculties
+        if (isAdmin && userFaculty != null && !userFaculty.equalsIgnoreCase("General")) {
+            facultyBox.setDisable(true);
+        }
 
         VBox layout = new VBox(10,
                 new Label("Course Name:"), nameField,

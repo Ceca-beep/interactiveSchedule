@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS timetable_entries (
                                                  id INT AUTO_INCREMENT PRIMARY KEY,
                                                  course_id INT NOT NULL,
                                                  type ENUM('LECTURE','LAB','SEMINAR') NOT NULL,
-                                                 day ENUM('MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY') NOT NULL,
+                                                 day ENUM('MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY') NOT NULL,
                                                  start_time TIME NOT NULL,
                                                  duration_minutes INT NOT NULL,
                                                  location_id INT NOT NULL,
@@ -95,55 +95,55 @@ INSERT INTO students (name, faculty) VALUES
 -- ================= COMPUTER SCIENCE SCHEDULE =================
 INSERT INTO timetable_entries (course_id, type, day, start_time, duration_minutes, location_id) VALUES
                                                                                                     -- 1. Programming Fundamentals
-                                                                                                    ((SELECT id FROM courses WHERE name='Programming Fundamentals'), 'LECTURE', 'MONDAY', '08:00:00', 120, (SELECT id FROM locations WHERE name='CS Building, Room 101')),
-                                                                                                    ((SELECT id FROM courses WHERE name='Programming Fundamentals'), 'LAB', 'MONDAY', '12:00:00', 120, (SELECT id FROM locations WHERE name='CS Building, Lab 1')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Programming Fundamentals'), 'LECTURE', 'MONDAY', '08:00:00', 90, (SELECT id FROM locations WHERE name='CS Building, Room 101')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Programming Fundamentals'), 'LAB', 'MONDAY', '13:00:00', 90, (SELECT id FROM locations WHERE name='CS Building, Lab 1')),
                                                                                                     -- 2. Data Structures
-                                                                                                    ((SELECT id FROM courses WHERE name='Data Structures'), 'LECTURE', 'TUESDAY', '09:00:00', 120, (SELECT id FROM locations WHERE name='CS Building, Room 305')),
-                                                                                                    ((SELECT id FROM courses WHERE name='Data Structures'), 'LAB', 'TUESDAY', '13:00:00', 120, (SELECT id FROM locations WHERE name='CS Building, Lab 1')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Data Structures'), 'LECTURE', 'TUESDAY', '09:40:00', 90, (SELECT id FROM locations WHERE name='CS Building, Room 305')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Data Structures'), 'LAB', 'TUESDAY', '13:00:00', 90, (SELECT id FROM locations WHERE name='CS Building, Lab 1')),
                                                                                                     -- 3. Operating Systems
-                                                                                                    ((SELECT id FROM courses WHERE name='Operating Systems'), 'LECTURE', 'WEDNESDAY', '08:30:00', 120, (SELECT id FROM locations WHERE name='CS Building, Room 101')),
-                                                                                                    ((SELECT id FROM courses WHERE name='Operating Systems'), 'LAB', 'WEDNESDAY', '12:30:00', 120, (SELECT id FROM locations WHERE name='CS Building, Lab 1')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Operating Systems'), 'LECTURE', 'WEDNESDAY', '11:20:00', 90, (SELECT id FROM locations WHERE name='CS Building, Room 101')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Operating Systems'), 'LAB', 'WEDNESDAY', '13:00:00', 90, (SELECT id FROM locations WHERE name='CS Building, Lab 1')),
                                                                                                     -- 4. Algorithms
-                                                                                                    ((SELECT id FROM courses WHERE name='Algorithms'), 'LECTURE', 'THURSDAY', '10:00:00', 120, (SELECT id FROM locations WHERE name='CS Building, Room 305')),
-                                                                                                    ((SELECT id FROM courses WHERE name='Algorithms'), 'SEMINAR', 'THURSDAY', '14:00:00', 90, (SELECT id FROM locations WHERE name='CS Building, Room 101')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Algorithms'), 'LECTURE', 'THURSDAY', '11:20:00', 90, (SELECT id FROM locations WHERE name='CS Building, Room 305')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Algorithms'), 'SEMINAR', 'THURSDAY', '14:40:00', 90, (SELECT id FROM locations WHERE name='CS Building, Room 101')),
                                                                                                     -- 5. Databases
-                                                                                                    ((SELECT id FROM courses WHERE name='Databases'), 'LECTURE', 'FRIDAY', '08:00:00', 120, (SELECT id FROM locations WHERE name='CS Building, Room 101')),
-                                                                                                    ((SELECT id FROM courses WHERE name='Databases'), 'LAB', 'FRIDAY', '12:00:00', 120, (SELECT id FROM locations WHERE name='CS Building, Lab 1'));
+                                                                                                    ((SELECT id FROM courses WHERE name='Databases'), 'LECTURE', 'FRIDAY', '08:00:00', 90, (SELECT id FROM locations WHERE name='CS Building, Room 101')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Databases'), 'LAB', 'FRIDAY', '16:20:00', 90, (SELECT id FROM locations WHERE name='CS Building, Lab 1'));
 
 
 -- ================= PSYCHOLOGY SCHEDULE =================
 INSERT INTO timetable_entries (course_id, type, day, start_time, duration_minutes, location_id) VALUES
                                                                                                     -- 1. Intro to Psychology
-                                                                                                    ((SELECT id FROM courses WHERE name='Intro to Psychology'), 'LECTURE', 'MONDAY', '10:00:00', 90, (SELECT id FROM locations WHERE name='Psychology Hall, Room 101')),
-                                                                                                    ((SELECT id FROM courses WHERE name='Intro to Psychology'), 'SEMINAR', 'MONDAY', '14:00:00', 60, (SELECT id FROM locations WHERE name='Psychology Lab A')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Intro to Psychology'), 'LECTURE', 'MONDAY', '09:40:00', 90, (SELECT id FROM locations WHERE name='Psychology Hall, Room 101')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Intro to Psychology'), 'SEMINAR', 'MONDAY', '14:40:00', 90, (SELECT id FROM locations WHERE name='Psychology Lab A')),
                                                                                                     -- 2. Cognitive Science
-                                                                                                    ((SELECT id FROM courses WHERE name='Cognitive Science'), 'LECTURE', 'TUESDAY', '11:00:00', 90, (SELECT id FROM locations WHERE name='Psychology Hall, Room 101')),
-                                                                                                    ((SELECT id FROM courses WHERE name='Cognitive Science'), 'LAB', 'TUESDAY', '15:00:00', 120, (SELECT id FROM locations WHERE name='Psychology Lab A')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Cognitive Science'), 'LECTURE', 'TUESDAY', '11:20:00', 90, (SELECT id FROM locations WHERE name='Psychology Hall, Room 101')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Cognitive Science'), 'LAB', 'TUESDAY', '16:20:00', 90, (SELECT id FROM locations WHERE name='Psychology Lab A')),
                                                                                                     -- 3. Behavioral Analysis
-                                                                                                    ((SELECT id FROM courses WHERE name='Behavioral Analysis'), 'LECTURE', 'WEDNESDAY', '09:00:00', 90, (SELECT id FROM locations WHERE name='Psychology Hall, Room 101')),
-                                                                                                    ((SELECT id FROM courses WHERE name='Behavioral Analysis'), 'SEMINAR', 'WEDNESDAY', '13:00:00', 60, (SELECT id FROM locations WHERE name='Central Library')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Behavioral Analysis'), 'LECTURE', 'WEDNESDAY', '09:50:00', 90, (SELECT id FROM locations WHERE name='Psychology Hall, Room 101')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Behavioral Analysis'), 'SEMINAR', 'WEDNESDAY', '18:00:00', 90, (SELECT id FROM locations WHERE name='Central Library')),
                                                                                                     -- 4. Clinical Psychology
-                                                                                                    ((SELECT id FROM courses WHERE name='Clinical Psychology'), 'LECTURE', 'THURSDAY', '10:00:00', 120, (SELECT id FROM locations WHERE name='Psychology Hall, Room 101')),
-                                                                                                    ((SELECT id FROM courses WHERE name='Clinical Psychology'), 'SEMINAR', 'THURSDAY', '14:00:00', 90, (SELECT id FROM locations WHERE name='University Admin')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Clinical Psychology'), 'LECTURE', 'THURSDAY', '11:20:00', 90, (SELECT id FROM locations WHERE name='Psychology Hall, Room 101')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Clinical Psychology'), 'SEMINAR', 'THURSDAY', '14:40:00', 90, (SELECT id FROM locations WHERE name='University Admin')),
                                                                                                     -- 5. Social Psychology
-                                                                                                    ((SELECT id FROM courses WHERE name='Social Psychology'), 'LECTURE', 'FRIDAY', '11:00:00', 90, (SELECT id FROM locations WHERE name='Psychology Hall, Room 101')),
-                                                                                                    ((SELECT id FROM courses WHERE name='Social Psychology'), 'SEMINAR', 'FRIDAY', '13:00:00', 60, (SELECT id FROM locations WHERE name='Psychology Lab A'));
+                                                                                                    ((SELECT id FROM courses WHERE name='Social Psychology'), 'LECTURE', 'FRIDAY', '16:20:00', 90, (SELECT id FROM locations WHERE name='Psychology Hall, Room 101')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Social Psychology'), 'SEMINAR', 'FRIDAY', '18:00:00', 90, (SELECT id FROM locations WHERE name='Psychology Lab A'));
 
 
 -- ================= HISTORY SCHEDULE =================
 INSERT INTO timetable_entries (course_id, type, day, start_time, duration_minutes, location_id) VALUES
                                                                                                     -- 1. World History I
-                                                                                                    ((SELECT id FROM courses WHERE name='World History I'), 'LECTURE', 'MONDAY', '09:00:00', 120, (SELECT id FROM locations WHERE name='History Wing, Room 5')),
-                                                                                                    ((SELECT id FROM courses WHERE name='World History I'), 'SEMINAR', 'MONDAY', '13:00:00', 60, (SELECT id FROM locations WHERE name='Archives Room')),
+                                                                                                    ((SELECT id FROM courses WHERE name='World History I'), 'LECTURE', 'MONDAY', '09:40:00', 90, (SELECT id FROM locations WHERE name='History Wing, Room 5')),
+                                                                                                    ((SELECT id FROM courses WHERE name='World History I'), 'SEMINAR', 'MONDAY', '14:40:00', 90, (SELECT id FROM locations WHERE name='Archives Room')),
                                                                                                     -- 2. Ancient Civilizations
-                                                                                                    ((SELECT id FROM courses WHERE name='Ancient Civilizations'), 'LECTURE', 'TUESDAY', '10:00:00', 90, (SELECT id FROM locations WHERE name='History Wing, Room 5')),
-                                                                                                    ((SELECT id FROM courses WHERE name='Ancient Civilizations'), 'SEMINAR', 'TUESDAY', '14:00:00', 90, (SELECT id FROM locations WHERE name='Humanities Building, Hall H1')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Ancient Civilizations'), 'LECTURE', 'TUESDAY', '08:00:00', 90, (SELECT id FROM locations WHERE name='History Wing, Room 5')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Ancient Civilizations'), 'SEMINAR', 'TUESDAY', '13:00:00', 90, (SELECT id FROM locations WHERE name='Humanities Building, Hall H1')),
                                                                                                     -- 3. Modern Europe
-                                                                                                    ((SELECT id FROM courses WHERE name='Modern Europe'), 'LECTURE', 'WEDNESDAY', '11:00:00', 90, (SELECT id FROM locations WHERE name='History Wing, Room 5')),
-                                                                                                    ((SELECT id FROM courses WHERE name='Modern Europe'), 'SEMINAR', 'WEDNESDAY', '15:00:00', 60, (SELECT id FROM locations WHERE name='Archives Room')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Modern Europe'), 'LECTURE', 'WEDNESDAY', '11:20:00', 90, (SELECT id FROM locations WHERE name='History Wing, Room 5')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Modern Europe'), 'SEMINAR', 'WEDNESDAY', '18:00:00', 90, (SELECT id FROM locations WHERE name='Archives Room')),
                                                                                                     -- 4. History of Art
-                                                                                                    ((SELECT id FROM courses WHERE name='History of Art'), 'LECTURE', 'THURSDAY', '09:00:00', 90, (SELECT id FROM locations WHERE name='History Wing, Room 5')),
-                                                                                                    ((SELECT id FROM courses WHERE name='History of Art'), 'SEMINAR', 'THURSDAY', '11:00:00', 60, (SELECT id FROM locations WHERE name='Central Library')),
+                                                                                                    ((SELECT id FROM courses WHERE name='History of Art'), 'LECTURE', 'THURSDAY', '09:40:00', 90, (SELECT id FROM locations WHERE name='History Wing, Room 5')),
+                                                                                                    ((SELECT id FROM courses WHERE name='History of Art'), 'SEMINAR', 'THURSDAY', '13:00:00', 90, (SELECT id FROM locations WHERE name='Central Library')),
                                                                                                     -- 5. Research Methods
-                                                                                                    ((SELECT id FROM courses WHERE name='Research Methods in History'), 'LECTURE', 'FRIDAY', '10:00:00', 90, (SELECT id FROM locations WHERE name='History Wing, Room 5')),
-                                                                                                    ((SELECT id FROM courses WHERE name='Research Methods in History'), 'SEMINAR', 'FRIDAY', '14:00:00', 90, (SELECT id FROM locations WHERE name='Archives Room'));
+                                                                                                    ((SELECT id FROM courses WHERE name='Research Methods in History'), 'LECTURE', 'FRIDAY', '08:00:00', 90, (SELECT id FROM locations WHERE name='History Wing, Room 5')),
+                                                                                                    ((SELECT id FROM courses WHERE name='Research Methods in History'), 'SEMINAR', 'FRIDAY', '18:00:00', 90, (SELECT id FROM locations WHERE name='Archives Room'));

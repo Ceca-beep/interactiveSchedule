@@ -4,6 +4,8 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import java.io.IOException;
+
 public class MainApp extends Application {
 
     @Override
@@ -15,7 +17,6 @@ public class MainApp extends Application {
 
         JdbcStorage storage = new JdbcStorage();
 
-        // 1. Define the Login Logic wrapper so we can call it recursively
         showLoginScreen(primaryStage, storage, dataSource);
     }
 

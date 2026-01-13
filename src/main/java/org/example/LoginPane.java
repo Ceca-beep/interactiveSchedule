@@ -106,7 +106,10 @@ public class LoginPane extends VBox {
         nameField.setPromptText("Your Name");
 
         ComboBox<String> facultyBox = new ComboBox<>();
-        facultyBox.getItems().addAll("Computer Science", "History", "Math", "Psychology", "General");
+        facultyBox.getItems().addAll(
+                "Computer Science", "History", "Math", "Psychology", "General",
+                "Medicine", "Biology", "Chemistry", "Physics", "Mathematics"
+        );
         facultyBox.setEditable(true); // Allow typing custom faculties if needed
         if (initialFaculty != null && !initialFaculty.isEmpty()) {
             facultyBox.setValue(initialFaculty);

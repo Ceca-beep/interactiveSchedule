@@ -279,7 +279,10 @@ public class ScheduleView extends ScrollPane {
         yField.setPromptText("Y Coord (North/South)");
 
         ComboBox<String> facultyBox = new ComboBox<>();
-        facultyBox.getItems().addAll("Computer Science", "History", "Math", "Psychology", "General");
+        facultyBox.getItems().addAll(
+                "Computer Science", "History", "Math", "Psychology", "General",
+                "Medicine", "Biology", "Chemistry", "Physics", "Mathematics"
+        );
         facultyBox.setValue(userFaculty);
         if (isAdmin && userFaculty != null && !userFaculty.equalsIgnoreCase("General")) {
             facultyBox.setDisable(true);

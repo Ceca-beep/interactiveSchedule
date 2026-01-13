@@ -125,12 +125,10 @@ public class JdbcStorage implements Storage {
 
     // --- 5. MODIFICATION METHODS (Requirement 7 & 9) ---
 
-    // THIS IS THE METHOD THAT WAS MISSING OR BROKEN
-    public void addTimetableEntry(String courseName, String type, String day, String startTime, int duration, String locationName, String faculty, String dataSource) throws IOException {
+    // 1. YOUR ORIGINAL METHOD (Fixed for DB IDs, keeps exact signature)
+    public void addTimetableEntry(String courseName, String type, String day, String startTime, int duration, String locationName, int x, int y, String faculty, String dataSource) throws IOException {
         try (Connection conn = DriverManager.getConnection(dataSource)) {
-            initSchema(conn);
-
-            // 1. Get or Create Course ID
+            // A. Get or Create Course ID
             int courseId;
             try (PreparedStatement ps = conn.prepareStatement("SELECT id FROM courses WHERE name = ?")) {
                 ps.setString(1, courseName);
@@ -138,7 +136,6 @@ public class JdbcStorage implements Storage {
                 if (rs.next()) {
                     courseId = rs.getInt("id");
                 } else {
-                    // Create new course
                     try (PreparedStatement insert = conn.prepareStatement("INSERT INTO courses (name, faculty) VALUES (?, ?)", Statement.RETURN_GENERATED_KEYS)) {
                         insert.setString(1, courseName);
                         insert.setString(2, faculty);
@@ -150,17 +147,28 @@ public class JdbcStorage implements Storage {
                 }
             }
 
-            // 2. Get or Create Location ID
+            // B. Get or Create Location ID (AND UPDATE COORDINATES)
             int locationId;
             try (PreparedStatement ps = conn.prepareStatement("SELECT id FROM locations WHERE name = ?")) {
                 ps.setString(1, locationName);
                 ResultSet rs = ps.executeQuery();
                 if (rs.next()) {
                     locationId = rs.getInt("id");
+
+                    // --- CRITICAL FIX: UPDATE coordinates for existing location ---
+                    try (PreparedStatement updateLoc = conn.prepareStatement("UPDATE locations SET x = ?, y = ? WHERE id = ?")) {
+                        updateLoc.setInt(1, x);
+                        updateLoc.setInt(2, y);
+                        updateLoc.setInt(3, locationId);
+                        updateLoc.executeUpdate();
+                    }
+                    // -------------------------------------------------------------
+
                 } else {
-                    // Create new location
-                    try (PreparedStatement insert = conn.prepareStatement("INSERT INTO locations (name, code, x, y) VALUES (?, 'GEN', 0, 0)", Statement.RETURN_GENERATED_KEYS)) {
+                    try (PreparedStatement insert = conn.prepareStatement("INSERT INTO locations (name, code, x, y) VALUES (?, 'GEN', ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
                         insert.setString(1, locationName);
+                        insert.setInt(2, x);
+                        insert.setInt(3, y);
                         insert.executeUpdate();
                         ResultSet gen = insert.getGeneratedKeys();
                         gen.next();
@@ -169,7 +177,7 @@ public class JdbcStorage implements Storage {
                 }
             }
 
-            // 3. Insert the Entry using IDs
+            // C. Insert the Entry
             String sql = "INSERT INTO timetable_entries (course_id, type, day, start_time, duration_minutes, location_id) VALUES (?, ?, ?, ?, ?, ?)";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, courseId);
@@ -182,6 +190,130 @@ public class JdbcStorage implements Storage {
             }
         } catch (SQLException e) {
             throw new IOException("Failed to add entry: " + e.getMessage(), e);
+        }
+    }
+
+    // 2. NEW: EDIT ENTRY (Renaming & Changing Type)
+    public void updateTimetableEntry(String oldCourseName, String day, String startTime,
+                                     String newCourseName, String newType,
+                                     String locationName, int x, int y, // NEW: Coordinates
+                                     String faculty, String dataSource) throws IOException {
+        try (Connection conn = DriverManager.getConnection(dataSource)) {
+            // 1. Get/Create Course IDs
+            int oldCourseId = getOrInsertCourse(conn, oldCourseName, faculty); // Helper from before
+            int newCourseId = getOrInsertCourse(conn, newCourseName, faculty);
+
+            // 2. Update Location Coordinates (The "Directions" Fix)
+            int locationId;
+            try (PreparedStatement ps = conn.prepareStatement("SELECT id FROM locations WHERE name = ?")) {
+                ps.setString(1, locationName);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    locationId = rs.getInt("id");
+                    // Update existing location coords
+                    try (PreparedStatement upLoc = conn.prepareStatement("UPDATE locations SET x = ?, y = ? WHERE id = ?")) {
+                        upLoc.setInt(1, x);
+                        upLoc.setInt(2, y);
+                        upLoc.setInt(3, locationId);
+                        upLoc.executeUpdate();
+                    }
+                } else {
+                    // Create new if renaming location
+                    locationId = getOrInsertLocation(conn, locationName, x, y);
+                }
+            }
+
+            // 3. Update the Entry
+            String sql = "UPDATE timetable_entries SET course_id = ?, type = ?, location_id = ? WHERE day = ? AND start_time = ? AND course_id = ?";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, newCourseId);
+                ps.setString(2, newType);
+                ps.setInt(3, locationId);
+                ps.setString(4, day);
+                ps.setString(5, startTime);
+                ps.setInt(6, oldCourseId);
+                ps.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new IOException("Update failed: " + e.getMessage(), e);
+        }
+    }
+
+    // --- NEW: DELETE ENTRY METHOD ---
+    public void deleteTimetableEntry(String courseName, String day, String startTime, String dataSource) throws IOException {
+        try (Connection conn = DriverManager.getConnection(dataSource)) {
+            // We need the course ID to delete the correct entry
+            int courseId = -1;
+            try (PreparedStatement ps = conn.prepareStatement("SELECT id FROM courses WHERE name = ?")) {
+                ps.setString(1, courseName);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) courseId = rs.getInt("id");
+            }
+
+            if (courseId != -1) {
+                String sql = "DELETE FROM timetable_entries WHERE course_id = ? AND day = ? AND start_time = ?";
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setInt(1, courseId);
+                    ps.setString(2, day);
+                    ps.setString(3, startTime);
+                    ps.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new IOException("Delete failed: " + e.getMessage(), e);
+        }
+    }
+
+    // 3. NEW: AUTO-CREATE STUDENT (Fixes Login)
+    public void createStudentIfNotExists(String name, String faculty, String dataSource) throws IOException {
+        try (Connection conn = DriverManager.getConnection(dataSource)) {
+            try (PreparedStatement check = conn.prepareStatement("SELECT 1 FROM students WHERE name = ?")) {
+                check.setString(1, name);
+                if (check.executeQuery().next()) return; // Already exists
+            }
+            try (PreparedStatement insert = conn.prepareStatement("INSERT INTO students (name, faculty) VALUES (?, ?)")) {
+                insert.setString(1, name);
+                insert.setString(2, faculty);
+                insert.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new IOException("Auto-create failed: " + e.getMessage(), e);
+        }
+    }
+
+    // --- HELPER UPDATES ---
+    private int getOrInsertCourse(Connection conn, String name, String faculty) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("SELECT id FROM courses WHERE name = ?")) {
+            ps.setString(1, name);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt("id");
+        }
+        // Insert if missing
+        try (PreparedStatement ps = conn.prepareStatement("INSERT INTO courses (name, faculty) VALUES (?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, name);
+            ps.setString(2, faculty);
+            ps.executeUpdate();
+            ResultSet rs = ps.getGeneratedKeys();
+            rs.next();
+            return rs.getInt(1);
+        }
+    }
+
+    private int getOrInsertLocation(Connection conn, String name, int x, int y) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("SELECT id FROM locations WHERE name = ?")) {
+            ps.setString(1, name);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt("id");
+        }
+        // Insert if missing
+        try (PreparedStatement ps = conn.prepareStatement("INSERT INTO locations (name, code, x, y) VALUES (?, 'GEN', ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, name);
+            ps.setInt(2, x);
+            ps.setInt(3, y);
+            ps.executeUpdate();
+            ResultSet rs = ps.getGeneratedKeys();
+            rs.next();
+            return rs.getInt(1);
         }
     }
 

@@ -127,7 +127,7 @@ public class ScheduleView extends ScrollPane {
             for (int row = 1; row <= TIME_SLOTS.length; row++) {
                 // Check if this specific cell is empty
                 if (getNodeFromGridPane(grid, col, row) == null) {
-                    grid.add(createEmptySlot(DAYS[col-1], TIME_SLOTS[row-1]), col, row);
+                    grid.add(createEmptySlot(DAYS[col - 1], TIME_SLOTS[row - 1]), col, row);
                 }
             }
         }
@@ -191,7 +191,7 @@ public class ScheduleView extends ScrollPane {
             if (!entry.getDay().equalsIgnoreCase(day)) continue;
 
             String entryTimeStr = entry.getStartTime();
-            if(entryTimeStr.length() > 5) entryTimeStr = entryTimeStr.substring(0, 5);
+            if (entryTimeStr.length() > 5) entryTimeStr = entryTimeStr.substring(0, 5);
 
             LocalTime entryTime = LocalTime.parse(entryTimeStr);
 
@@ -223,74 +223,12 @@ public class ScheduleView extends ScrollPane {
         return pane;
     }
 
-    private void showAddDialog(String day, String startTime) {
-        Dialog<Boolean> dialog = new Dialog<>();
-        dialog.setTitle("Add New Class");
-        dialog.setHeaderText("Add Class for " + day + " at " + startTime);
+    // Inside ScheduleView.java
 
-        ButtonType saveButton = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(saveButton, ButtonType.CANCEL);
-
-        TextField nameField = new TextField();
-        nameField.setPromptText("Course Name");
-
-        ComboBox<String> typeBox = new ComboBox<>();
-        typeBox.getItems().addAll("LECTURE", "LAB", "SEMINAR");
-        typeBox.setValue("LECTURE");
-
-        TextField locField = new TextField();
-        locField.setPromptText("Room/Location");
-
-        // --- NEW FACULTY SELECTION ---
-        ComboBox<String> facultyBox = new ComboBox<>();
-        facultyBox.getItems().addAll("Computer Science", "History", "Math", "Engineering", "General");
-        facultyBox.setValue(userFaculty);
-
-        // If they are a specific faculty admin, don't let them add courses to other faculties
-        if (isAdmin && userFaculty != null && !userFaculty.equalsIgnoreCase("General")) {
-            facultyBox.setDisable(true);
-        }
-
-        VBox layout = new VBox(10,
-                new Label("Course Name:"), nameField,
-                new Label("Type:"), typeBox,
-                new Label("Location:"), locField,
-                new Label("Target Faculty:"), facultyBox // Add it to the layout
-        );
-        layout.setPadding(new Insets(20));
-        dialog.getDialogPane().setContent(layout);
-
-        dialog.setResultConverter(btn -> {
-            if (btn == saveButton) {
-                try {
-                    storage.addTimetableEntry(
-                            nameField.getText(),
-                            typeBox.getValue(),
-                            day,
-                            startTime + ":00",
-                            90,
-                            locField.getText(),
-                            facultyBox.getValue(), // Use the selected faculty from dropdown
-                            dataSource
-                    );
-                    return true;
-                } catch (IOException ex) {
-                    new Alert(Alert.AlertType.ERROR, "Error: " + ex.getMessage()).show();
-                }
-            }
-            return false;
-        });
-
-        dialog.showAndWait().ifPresent(success -> {
-            if (success) refreshSchedule();
-        });
-    }
-
+    // 1. Update createClassBlock to open Edit Dialog on click
     private Button createClassBlock(TimetableEntry entry, Location location) {
         String locationDisplay = (location != null) ? location.getName() : entry.getLocationId();
-
-        Button btn = new Button();
-        btn.setText(entry.getCourseName() + "\n" + locationDisplay + "\n(" + entry.getType() + ")");
+        Button btn = new Button(entry.getCourseName() + "\n" + locationDisplay + "\n(" + entry.getType() + ")");
         btn.setTextAlignment(TextAlignment.CENTER);
         btn.setWrapText(true);
         btn.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
@@ -303,69 +241,170 @@ public class ScheduleView extends ScrollPane {
             case "SEMINAR" -> "-fx-background-color: #FF9800; -fx-text-fill: white;";
             default -> "-fx-background-color: #9E9E9E; -fx-text-fill: white;";
         };
-
         btn.setStyle(colorStyle + "-fx-background-radius: 10; -fx-cursor: hand;");
 
         btn.setOnAction(e -> {
             if (isAdmin) {
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                alert.setTitle("Admin Options");
-                alert.setHeaderText("Edit Course: " + entry.getCourseName());
-                alert.setContentText("What would you like to do?");
+                // OPEN EDIT DIALOG (Feature 1)
+                showEditDialog(entry, location);
+            } else {
+                // Show Directions
+                String msg = (location != null) ? location.getDirectionsFromEntrance() : "No location data";
+                new Alert(Alert.AlertType.INFORMATION, msg).show();
+            }
+        });
+        return btn;
+    }
 
-                ButtonType btnRename = new ButtonType("Rename");
-                ButtonType btnDelete = new ButtonType("Delete");
-                ButtonType btnCancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+    // 2. Update Add Dialog to include Directions (X/Y)
+    private void showAddDialog(String day, String startTime) {
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle("Add New Class");
+        dialog.setHeaderText("Add Class for " + day + " at " + startTime);
+        ButtonType saveButton = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButton, ButtonType.CANCEL);
 
-                alert.getButtonTypes().setAll(btnRename, btnDelete, btnCancel);
+        TextField nameField = new TextField();
+        nameField.setPromptText("Course Name");
+        ComboBox<String> typeBox = new ComboBox<>();
+        typeBox.getItems().addAll("LECTURE", "LAB", "SEMINAR");
+        typeBox.setValue("LECTURE");
+        TextField locField = new TextField();
+        locField.setPromptText("Location Name");
 
-                Optional<ButtonType> result = alert.showAndWait();
+        // NEW: Coordinates for directions
+        TextField xField = new TextField("0");
+        xField.setPromptText("X Coord (East/West)");
+        TextField yField = new TextField("0");
+        yField.setPromptText("Y Coord (North/South)");
 
-                if (result.isPresent() && result.get() == btnRename) {
-                    TextInputDialog renameDialog = new TextInputDialog(entry.getCourseName());
-                    renameDialog.setTitle("Rename Course");
-                    renameDialog.setHeaderText("Enter new name for: " + entry.getCourseName());
-                    renameDialog.setContentText("New Name:");
+        ComboBox<String> facultyBox = new ComboBox<>();
+        facultyBox.getItems().addAll("Computer Science", "History", "Math", "Psychology", "General");
+        facultyBox.setValue(userFaculty);
+        if (isAdmin && userFaculty != null && !userFaculty.equalsIgnoreCase("General")) {
+            facultyBox.setDisable(true);
+        }
 
-                    renameDialog.showAndWait().ifPresent(newName -> {
-                        try {
-                            storage.renameCourse(entry.getCourseName(), newName, dataSource);
-                            refreshSchedule();
-                        } catch (IOException ex) {
-                            new Alert(Alert.AlertType.ERROR, "Error: " + ex.getMessage()).show();
-                        }
-                    });
+        VBox layout = new VBox(10,
+                new Label("Name:"), nameField,
+                new Label("Type:"), typeBox,
+                new Label("Location:"), locField,
+                new Label("Directions (Coordinates):"),
+                new HBox(5, new Label("X:"), xField, new Label("Y:"), yField),
+                new Label("Faculty:"), facultyBox
+        );
+        layout.setPadding(new Insets(20));
+        dialog.getDialogPane().setContent(layout);
 
-                } else if (result.isPresent() && result.get() == btnDelete) {
-                    Alert confirm = new Alert(Alert.AlertType.WARNING, "Are you sure you want to delete '" + entry.getCourseName() + "'?\nThis cannot be undone.", ButtonType.YES, ButtonType.NO);
-                    confirm.showAndWait().ifPresent(response -> {
-                        if (response == ButtonType.YES) {
+        dialog.setResultConverter(btn -> {
+            if (btn == saveButton) {
+                try {
+                    // Parse coordinates
+                    int x = Integer.parseInt(xField.getText());
+                    int y = Integer.parseInt(yField.getText());
+
+                    storage.addTimetableEntry(
+                            nameField.getText(), typeBox.getValue(), day, startTime + ":00", 90,
+                            locField.getText(), x, y,
+                            facultyBox.getValue(), dataSource
+                    );
+                    return true;
+                } catch (Exception ex) {
+                    new Alert(Alert.AlertType.ERROR, "Error: " + ex.getMessage()).show();
+                }
+            }
+            return false;
+        });
+        dialog.showAndWait().ifPresent(success -> {
+            if (success) refreshSchedule();
+        });
+    }
+
+    // 3. NEW: Edit Dialog (Feature 1)
+    private void showEditDialog(TimetableEntry entry, Location currentLocation) {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Edit Class");
+        dialog.setHeaderText("Editing: " + entry.getCourseName());
+
+        // Define Buttons
+        ButtonType updateButtonType = new ButtonType("Update", ButtonBar.ButtonData.OK_DONE);
+        ButtonType deleteButtonType = new ButtonType("Delete Class", ButtonBar.ButtonData.RIGHT);
+        dialog.getDialogPane().getButtonTypes().addAll(updateButtonType, deleteButtonType, ButtonType.CANCEL);
+
+        // Fields
+        TextField nameField = new TextField(entry.getCourseName());
+        ComboBox<String> typeBox = new ComboBox<>();
+        typeBox.getItems().addAll("LECTURE", "LAB", "SEMINAR");
+        typeBox.setValue(entry.getType().name());
+
+        TextField locField = new TextField(currentLocation != null ? currentLocation.getName() : entry.getLocationId());
+
+        // Coordinate Fields (Pre-filled)
+        String currentX = (currentLocation != null) ? String.valueOf(currentLocation.getX()) : "0";
+        String currentY = (currentLocation != null) ? String.valueOf(currentLocation.getY()) : "0";
+
+        TextField xField = new TextField(currentX);
+        xField.setPromptText("X");
+        TextField yField = new TextField(currentY);
+        yField.setPromptText("Y");
+
+        VBox layout = new VBox(10,
+                new Label("Edit Name:"), nameField,
+                new Label("Edit Type:"), typeBox,
+                new Label("Edit Location:"), locField,
+                new Label("Edit Coordinates (Directions):"),
+                new HBox(5, new Label("X:"), xField, new Label("Y:"), yField)
+        );
+        layout.setPadding(new Insets(20));
+        dialog.getDialogPane().setContent(layout);
+
+        // Style the Delete button
+        final Button btDelete = (Button) dialog.getDialogPane().lookupButton(deleteButtonType);
+        btDelete.setStyle("-fx-background-color: #ff4444; -fx-text-fill: white;");
+
+        dialog.setResultConverter(btn -> btn);
+
+        dialog.showAndWait().ifPresent(btn -> {
+            try {
+                // Formatting time for DB
+                String fullStartTime = entry.getStartTime().length() == 5 ? entry.getStartTime() + ":00" : entry.getStartTime();
+
+                if (btn == updateButtonType) {
+                    // --- THE FIX IS HERE: Parse X and Y and pass them ---
+                    int newX = Integer.parseInt(xField.getText());
+                    int newY = Integer.parseInt(yField.getText());
+
+                    storage.updateTimetableEntry(
+                            entry.getCourseName(),      // 1. oldCourseName
+                            entry.getDay(),             // 2. day
+                            fullStartTime,              // 3. startTime
+                            nameField.getText(),        // 4. newCourseName
+                            typeBox.getValue(),         // 5. newType
+                            locField.getText(),         // 6. locationName
+                            newX,                       // 7. X (Added)
+                            newY,                       // 8. Y (Added)
+                            userFaculty,                // 9. faculty
+                            dataSource                  // 10. dataSource
+                    );
+                    refreshSchedule();
+
+                } else if (btn == deleteButtonType) {
+                    // Delete Logic
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Delete " + entry.getCourseName() + "?", ButtonType.YES, ButtonType.NO);
+                    confirm.showAndWait().ifPresent(resp -> {
+                        if (resp == ButtonType.YES) {
                             try {
-                                storage.deleteCourse(entry.getCourseName(), dataSource);
+                                storage.deleteTimetableEntry(entry.getCourseName(), entry.getDay(), fullStartTime, dataSource);
                                 refreshSchedule();
-                            } catch (IOException ex) {
-                                new Alert(Alert.AlertType.ERROR, "Error: " + ex.getMessage()).show();
+                            } catch (IOException e) {
+                                new Alert(Alert.AlertType.ERROR, "Delete failed: " + e.getMessage()).show();
                             }
                         }
                     });
                 }
-            } else {
-                if (location != null) {
-                    String directions = location.getDirectionsFromEntrance();
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setTitle("Navigation");
-                    alert.setHeaderText("Directions to " + location.getName());
-                    alert.setContentText(directions);
-                    alert.showAndWait();
-                } else {
-                    Alert alert = new Alert(Alert.AlertType.WARNING);
-                    alert.setTitle("Unknown Location");
-                    alert.setHeaderText("Location Data Missing");
-                    alert.setContentText("Sorry, we can't find the coordinates for: " + entry.getLocationId());
-                    alert.showAndWait();
-                }
+            } catch (Exception ex) {
+                new Alert(Alert.AlertType.ERROR, "Error: " + ex.getMessage()).show();
             }
         });
-        return btn;
     }
 }

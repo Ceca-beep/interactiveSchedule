@@ -7,12 +7,21 @@ import java.io.IOException;
 
 public class LoginPane extends VBox {
 
-    // Custom interface to pass 3 values: Success, IsAdmin, FacultyName
+    // Custom interface to pass login results to MainApp
     public interface LoginCallback {
         void onLogin(boolean success, boolean isAdmin, String faculty);
     }
 
+    // Member variables so we can access them in the dialog helper
+    private final JdbcStorage storage;
+    private final String dataSource;
+    private final LoginCallback callback;
+
     public LoginPane(JdbcStorage storage, String dataSource, LoginCallback onResult) {
+        this.storage = storage;
+        this.dataSource = dataSource;
+        this.callback = onResult;
+
         setSpacing(10);
         setPadding(new Insets(20));
 
@@ -21,12 +30,15 @@ public class LoginPane extends VBox {
 
         Label nameLabel = new Label("Account Name:");
         TextField nameField = new TextField();
+        nameField.setPromptText("Enter your username");
 
         Label passLabel = new Label("Password (Admin only):");
         PasswordField passField = new PasswordField();
+        passField.setPromptText("Leave blank if student");
 
-        Label facultyLabel = new Label("Faculty (Students only):");
+        Label facultyLabel = new Label("Faculty (Optional for login):");
         TextField facultyField = new TextField();
+        facultyField.setPromptText("e.g. History");
 
         Label status = new Label();
         status.setStyle("-fx-text-fill: red;");
@@ -34,27 +46,24 @@ public class LoginPane extends VBox {
         Button login = new Button("Login");
         login.setDefaultButton(true);
 
-        // REPLACE THE login.setOnAction BLOCK IN LoginPane.java
-
         login.setOnAction(evt -> {
             String name = nameField.getText().trim();
             String password = passField.getText().trim();
-            String faculty = facultyField.getText().trim(); // Now mandatory for Admins too!
+            String faculty = facultyField.getText().trim();
 
             if (name.isEmpty()) {
                 status.setText("Please enter a name.");
                 return;
             }
 
-            // 1. ADMIN CHECK (Now Faculty-Specific)
+            // 1. ADMIN CHECK
             if (name.equalsIgnoreCase("admin")) {
                 if (password.equals("admin123")) {
                     if (faculty.isEmpty()) {
                         status.setText("Admins must specify a Faculty.");
                         return;
                     }
-                    // Success! Log in as Admin for THAT SPECIFIC faculty
-                    onResult.onLogin(true, true, faculty);
+                    callback.onLogin(true, true, faculty);
                 } else {
                     status.setText("Invalid admin password.");
                 }
@@ -63,19 +72,79 @@ public class LoginPane extends VBox {
 
             // 2. STUDENT CHECK
             try {
-                boolean ok = storage.accountExists(name, faculty.isEmpty() ? null : faculty, dataSource);
-                if (ok) {
-                    onResult.onLogin(true, false, faculty);
+                // Check if account exists
+                boolean exists = storage.accountExists(name, faculty.isEmpty() ? null : faculty, dataSource);
+
+                if (exists) {
+                    // Success!
+                    callback.onLogin(true, false, faculty);
                 } else {
-                    status.setText("Account not found.");
-                    onResult.onLogin(false, false, null);
+                    // ACCOUNT NOT FOUND -> SHOW POPUP TO CREATE IT
+                    showCreateAccountDialog(name, faculty);
                 }
+
             } catch (IOException e) {
                 status.setText("DB error: " + e.getMessage());
-                onResult.onLogin(false, false, null);
+                e.printStackTrace();
             }
         });
 
         getChildren().addAll(title, nameLabel, nameField, passLabel, passField, facultyLabel, facultyField, login, status);
+    }
+
+    // --- NEW: THE POP-UP DIALOG ---
+    private void showCreateAccountDialog(String initialName, String initialFaculty) {
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle("Account Not Found");
+        dialog.setHeaderText("User '" + initialName + "' does not exist.\nDo you want to create a new account?");
+
+        ButtonType createButton = new ButtonType("Create & Login", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(createButton, ButtonType.CANCEL);
+
+        // Fields for the dialog
+        TextField nameField = new TextField(initialName);
+        nameField.setPromptText("Your Name");
+
+        ComboBox<String> facultyBox = new ComboBox<>();
+        facultyBox.getItems().addAll("Computer Science", "History", "Math", "Psychology", "General");
+        facultyBox.setEditable(true); // Allow typing custom faculties if needed
+        if (initialFaculty != null && !initialFaculty.isEmpty()) {
+            facultyBox.setValue(initialFaculty);
+        } else {
+            facultyBox.setPromptText("Select Faculty");
+        }
+
+        VBox content = new VBox(10,
+                new Label("Confirm Name:"), nameField,
+                new Label("Select Faculty:"), facultyBox
+        );
+        content.setPadding(new Insets(10));
+        dialog.getDialogPane().setContent(content);
+
+        // Handle the "Create" button click
+        dialog.setResultConverter(btn -> {
+            if (btn == createButton) {
+                String newName = nameField.getText().trim();
+                String newFaculty = facultyBox.getValue();
+
+                if (newName.isEmpty() || newFaculty == null || newFaculty.trim().isEmpty()) {
+                    new Alert(Alert.AlertType.WARNING, "Name and Faculty are required.").show();
+                    return null;
+                }
+
+                try {
+                    // Create the student in the database
+                    storage.createStudentIfNotExists(newName, newFaculty, dataSource);
+                    // Log them in immediately
+                    callback.onLogin(true, false, newFaculty);
+                    return true;
+                } catch (IOException e) {
+                    new Alert(Alert.AlertType.ERROR, "Failed to create account: " + e.getMessage()).show();
+                }
+            }
+            return false;
+        });
+
+        dialog.showAndWait();
     }
 }

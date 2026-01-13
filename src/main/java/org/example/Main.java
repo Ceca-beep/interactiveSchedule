@@ -1,12 +1,9 @@
 package org.example;
 
 import javafx.application.Application;
-import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-import java.io.IOException;
-
-public class MainApp extends Application {
+public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
@@ -21,10 +18,9 @@ public class MainApp extends Application {
     }
 
     private void showLoginScreen(Stage stage, JdbcStorage storage, String dataSource) {
-        // Now accepting (success, isAdmin, userFaculty)
+
         LoginPane login = new LoginPane(storage, dataSource, (success, isAdmin, userFaculty) -> {
             if (success) {
-                // Pass 'userFaculty' to the ScheduleView constructor
                 ScheduleView sv = new ScheduleView(storage, dataSource, isAdmin, userFaculty, () -> {
                     showLoginScreen(stage, storage, dataSource);
                 });

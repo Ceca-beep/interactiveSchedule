@@ -3,7 +3,7 @@ CREATE DATABASE IF NOT EXISTS university_schedule
     COLLATE = utf8mb4_unicode_ci;
 USE university_schedule;
 
--- 1. LOCATIONS TABLE
+
 CREATE TABLE IF NOT EXISTS locations (
                                          id INT AUTO_INCREMENT PRIMARY KEY,
                                          name VARCHAR(255) NOT NULL,
@@ -12,14 +12,14 @@ CREATE TABLE IF NOT EXISTS locations (
                                          y INT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 2. COURSES TABLE
+
 CREATE TABLE IF NOT EXISTS courses (
                                        id INT AUTO_INCREMENT PRIMARY KEY,
                                        name VARCHAR(255) NOT NULL UNIQUE,
                                        faculty VARCHAR(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 3. TIMETABLE ENTRIES TABLE
+
 CREATE TABLE IF NOT EXISTS timetable_entries (
                                                  id INT AUTO_INCREMENT PRIMARY KEY,
                                                  course_id INT NOT NULL,
@@ -32,14 +32,14 @@ CREATE TABLE IF NOT EXISTS timetable_entries (
                                                  FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 4. STUDENTS TABLE
+
 CREATE TABLE IF NOT EXISTS students (
                                         id INT AUTO_INCREMENT PRIMARY KEY,
                                         name VARCHAR(255) NOT NULL,
                                         faculty VARCHAR(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 5. ADMINS TABLE
+
 CREATE TABLE IF NOT EXISTS admins (
                                       id INT AUTO_INCREMENT PRIMARY KEY,
                                       name VARCHAR(255) NOT NULL UNIQUE,
@@ -48,13 +48,8 @@ CREATE TABLE IF NOT EXISTS admins (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
--- =============================================
---                 SEED DATA
--- =============================================
-
--- A. Insert Locations
 INSERT INTO locations (name, code, x, y) VALUES
-                                             -- General / Existing
+                                             -- General
                                              ('Main Entrance', 'A', 0, 0),
                                              ('Central Library', 'L', 380, 90),
                                              ('University Admin', 'U', 40, 240),
@@ -81,7 +76,7 @@ INSERT INTO locations (name, code, x, y) VALUES
                                              ('Chemistry Lab 4', 'Chem', 460, 370),
                                              ('Genetics Lab', 'Bio', 440, 360);
 
--- B. Insert Courses (Grouped by Faculty)
+
 INSERT INTO courses (name, faculty) VALUES
                                         -- Computer Science
                                         ('Programming Fundamentals', 'Computer Science'),
@@ -104,42 +99,42 @@ INSERT INTO courses (name, faculty) VALUES
                                         ('History of Art', 'History'),
                                         ('Research Methods in History', 'History'),
 
-                                        -- Medicine (NEW)
+                                        -- Medicine
                                         ('Human Anatomy', 'Medicine'),
                                         ('Physiology', 'Medicine'),
                                         ('Medical Ethics', 'Medicine'),
                                         ('Pathology I', 'Medicine'),
                                         ('Pharmacology', 'Medicine'),
 
-                                        -- Biology (NEW)
+                                        -- Biology
                                         ('Cell Biology', 'Biology'),
                                         ('Genetics', 'Biology'),
                                         ('Microbiology', 'Biology'),
                                         ('Ecology', 'Biology'),
                                         ('Evolutionary Bio', 'Biology'),
 
-                                        -- Chemistry (NEW)
+                                        -- Chemistry
                                         ('General Chemistry', 'Chemistry'),
                                         ('Organic Chemistry', 'Chemistry'),
                                         ('Biochemistry', 'Chemistry'),
                                         ('Analytical Chem', 'Chemistry'),
                                         ('Physical Chemistry', 'Chemistry'),
 
-                                        -- Mathematics (NEW)
+                                        -- Mathematics
                                         ('Calculus I', 'Mathematics'),
                                         ('Linear Algebra', 'Mathematics'),
                                         ('Discrete Math', 'Mathematics'),
                                         ('Probability', 'Mathematics'),
                                         ('Number Theory', 'Mathematics'),
 
-                                        -- Physics (NEW)
+                                        -- Physics
                                         ('Mechanics', 'Physics'),
                                         ('Electromagnetism', 'Physics'),
                                         ('Quantum Physics', 'Physics'),
                                         ('Thermodynamics', 'Physics'),
                                         ('Astrophysics', 'Physics');
 
--- C. Insert Students
+
 INSERT INTO students (name, faculty) VALUES
                                          ('Alex', 'Computer Science'),
                                          ('Sarah', 'Psychology'),
@@ -151,9 +146,6 @@ INSERT INTO students (name, faculty) VALUES
                                          ('Tom', 'Physics');
 
 
--- D. Insert Schedule
-
--- ... [Keep previous CS, Psych, History entries if you want, or replace. I will include ALL below] ...
 
 -- ================= COMPUTER SCIENCE =================
 INSERT INTO timetable_entries (course_id, type, day, start_time, duration_minutes, location_id) VALUES

@@ -7,12 +7,12 @@ import java.io.IOException;
 
 public class LoginPane extends VBox {
 
-    // Custom interface to pass login results to MainApp
+
     public interface LoginCallback {
         void onLogin(boolean success, boolean isAdmin, String faculty);
     }
 
-    // Member variables so we can access them in the dialog helper
+
     private final JdbcStorage storage;
     private final String dataSource;
     private final LoginCallback callback;
@@ -56,7 +56,7 @@ public class LoginPane extends VBox {
                 return;
             }
 
-            // 1. ADMIN CHECK
+
             if (name.equalsIgnoreCase("admin")) {
                 if (password.equals("admin123")) {
                     if (faculty.isEmpty()) {
@@ -70,16 +70,16 @@ public class LoginPane extends VBox {
                 return;
             }
 
-            // 2. STUDENT CHECK
+
             try {
-                // Check if account exists
+
                 boolean exists = storage.accountExists(name, faculty.isEmpty() ? null : faculty, dataSource);
 
                 if (exists) {
-                    // Success!
+
                     callback.onLogin(true, false, faculty);
                 } else {
-                    // ACCOUNT NOT FOUND -> SHOW POPUP TO CREATE IT
+
                     showCreateAccountDialog(name, faculty);
                 }
 
@@ -92,7 +92,7 @@ public class LoginPane extends VBox {
         getChildren().addAll(title, nameLabel, nameField, passLabel, passField, facultyLabel, facultyField, login, status);
     }
 
-    // --- NEW: THE POP-UP DIALOG ---
+
     private void showCreateAccountDialog(String initialName, String initialFaculty) {
         Dialog<Boolean> dialog = new Dialog<>();
         dialog.setTitle("Account Not Found");
@@ -101,7 +101,7 @@ public class LoginPane extends VBox {
         ButtonType createButton = new ButtonType("Create & Login", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(createButton, ButtonType.CANCEL);
 
-        // Fields for the dialog
+
         TextField nameField = new TextField(initialName);
         nameField.setPromptText("Your Name");
 
@@ -124,7 +124,7 @@ public class LoginPane extends VBox {
         content.setPadding(new Insets(10));
         dialog.getDialogPane().setContent(content);
 
-        // Handle the "Create" button click
+
         dialog.setResultConverter(btn -> {
             if (btn == createButton) {
                 String newName = nameField.getText().trim();
@@ -136,9 +136,8 @@ public class LoginPane extends VBox {
                 }
 
                 try {
-                    // Create the student in the database
+
                     storage.createStudentIfNotExists(newName, newFaculty, dataSource);
-                    // Log them in immediately
                     callback.onLogin(true, false, newFaculty);
                     return true;
                 } catch (IOException e) {

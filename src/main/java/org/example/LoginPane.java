@@ -36,9 +36,15 @@ public class LoginPane extends VBox {
         PasswordField passField = new PasswordField();
         passField.setPromptText("Leave blank if student");
 
-        Label facultyLabel = new Label("Faculty (Optional for login):");
-        TextField facultyField = new TextField();
-        facultyField.setPromptText("e.g. History");
+        Label facultyLabel = new Label("Faculty (Required for Login):");
+        ComboBox<String> facultyField = new ComboBox<>();
+        facultyField.getItems().addAll(
+                "Computer Science", "History", "Math", "Psychology", "General",
+                "Medicine", "Biology", "Chemistry", "Physics", "Mathematics"
+        );
+        facultyField.setPromptText("Select your faculty");
+        facultyField.setMaxWidth(Double.MAX_VALUE);
+        facultyField.setPromptText("Select Faculty");
 
         Label status = new Label();
         status.setStyle("-fx-text-fill: red;");
@@ -49,7 +55,7 @@ public class LoginPane extends VBox {
         login.setOnAction(evt -> {
             String name = nameField.getText().trim();
             String password = passField.getText().trim();
-            String faculty = facultyField.getText().trim();
+            String faculty = (facultyField.getValue() != null) ? facultyField.getValue() : "";
 
             if (name.isEmpty()) {
                 status.setText("Please enter a name.");

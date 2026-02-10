@@ -70,9 +70,23 @@ public class ScheduleView extends ScrollPane {
     }
 
     private void setupGridStructure(GridPane grid) {
+
+        ColumnConstraints timeCol = new ColumnConstraints();
+        timeCol.setPrefWidth(80);
+        grid.getColumnConstraints().add(timeCol);
+
+
+        for (int i = 0; i < 5; i++) {
+            ColumnConstraints dayCol = new ColumnConstraints();
+            dayCol.setPercentWidth(18); // This forces all 5 days to be identical width
+            dayCol.setHalignment(HPos.CENTER);
+            grid.getColumnConstraints().add(dayCol);
+        }
+
         Label timeHeader = new Label("Time / Day");
         timeHeader.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         grid.add(timeHeader, 0, 0);
+
 
         for (int i = 0; i < DAYS.length; i++) {
             Label dayLabel = new Label(DAYS[i]);

@@ -1,3 +1,2 @@
-# interactiveSchedule
-An app that helps first-year students navigate through campus and
-understand their schedule.​
+<img width="594" height="563" alt="image" src="https://github.com/user-attachments/assets/27da9319-3e0e-4850-907b-8ed50ab3a926" />
+​
